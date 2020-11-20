@@ -46,8 +46,9 @@ function(FindOpenCVModule MODULE_NAME)
     find_library(DEBUG_LIB NAMES ${LIBRARY_NAME}d PATHS ${OPENCV_LIBS_PATH} NO_DEFAULT_PATH)
     find_library(RELEASE_LIB NAMES ${LIBRARY_NAME} PATHS ${OPENCV_LIBS_PATH} NO_DEFAULT_PATH)
 
-    message(STATUS "Found Debug OpenCV ${MODULE_NAME} module under ${DEBUG_LIB}")
-    message(STATUS "Found Debug OpenCV ${MODULE_NAME} module under ${RELEASE_LIB}")
+    message(STATUS "Found Debug OpenCV [${MODULE_NAME}]")
+    message(STATUS "Debug: ${DEBUG_LIB}")
+    message(STATUS "Release: ${RELEASE_LIB}")
 
     message(STATUS "Specified target [${TARGET_NAME}] for found OpenCV module")
     add_library(${TARGET_NAME} STATIC IMPORTED GLOBAL)
@@ -56,6 +57,10 @@ function(FindOpenCVModule MODULE_NAME)
         IMPORTED_LOCATION ${RELEASE_LIB}
         IMPORTED_CONFIGURATIONS "Debug;Release"
     )
+
+    unset(DEBUG_LIB CACHE)
+    unset(RELEASE_LIB CACHE)
+    message(STATUS "Unloaded paths to [${MODULE_NAME}] libraries")
 endfunction()
 
 set(opencv2_INCLUDE_DIRS ${OPENCV_INSTALL_DIR}/include)
