@@ -10,7 +10,10 @@ include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 
 project(GuardianBot LANGUAGES CXX)
 
-add_executable(GuardianBotApp main.cpp)
+add_executable(GuardianBotApp
+    main.cpp
+    ArgumentParser.cpp
+)
 
 OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
 
