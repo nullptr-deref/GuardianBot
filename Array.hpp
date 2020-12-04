@@ -69,3 +69,16 @@ public:
     unsigned int size = 0;
     T *data = nullptr;
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const Array<T> &arr)
+{
+    out << "[ ";
+    for (unsigned int i = 0; i < arr.size - 1; i++)
+    {
+        out << arr[i] << ", ";
+    }
+    out << arr[arr.size - 1] << " ]";
+
+    return out;
+}
