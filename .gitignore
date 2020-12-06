@@ -1,3 +1,4 @@
 build
 3rd-party
 .vscode
+*.png
