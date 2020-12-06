@@ -10,6 +10,9 @@ include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 
 project(GuardianBot LANGUAGES CXX)
 
+add_subdirectory(ImageCompare)
+add_subdirectory(Serial)
+
 add_executable(GuardianBotApp
     main.cpp
     ArgumentParser.cpp
@@ -28,6 +31,7 @@ target_include_directories(GuardianBotApp
     ${librealsense2_INCLUDE_DIRS}
     ${opencv2_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/ImageCompare
+    ${CMAKE_SOURCE_DIR}/Serial
 )
 
 target_link_libraries(GuardianBotApp
@@ -39,6 +43,9 @@ target_link_libraries(GuardianBotApp
     opencv_dnn
     opencv_imgcodecs
 
+    Serial
+    imgcmp
+
     ${OPENCV_DEPS}
 )
 
@@ -47,5 +54,3 @@ if(WIN32)
         PRIVATE "/MTd"
     )
 endif()
-
-add_subdirectory(ImageCompare)
