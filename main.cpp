@@ -29,8 +29,8 @@ int main(int argc, char **argv)
         std::cerr << e.what() << '\n';
     }
 
-    auto list = ctx.query_devices();
-    if (list.size() == 0)
+    rs2::device_list list = ctx.query_devices();
+    if (0 == list.size())
     {
         std::cerr << "No devices connected.\n";
         return 0;
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
         nnet.setInput(blob);
         const cv::Mat detection = nnet.forward();
-        const cv::Mat detections(detection.size[2], detection.size[3], CV_32F, (void *)(detection.ptr<float>()));
+        const cv::Mat detections(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
 
         const float defaultConfidence = 0.7f;
         std::vector<cv::Rect> faces;
@@ -69,22 +69,25 @@ int main(int argc, char **argv)
         {
             const float confidence = detections.at<float>(i, 2);
 
-            if (confidence < defaultConfidence) {
-                continue;
+            if (confidence >= defaultConfidence)
+            {
+                const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * imageFromFrame.cols);
+                const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * imageFromFrame.rows);
+                const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * imageFromFrame.cols);
+                const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * imageFromFrame.rows);
+
+                faces.emplace_back
+                (
+                    xLeftBottom,
+                    yLeftBottom,
+                    (xRightTop - xLeftBottom),
+                    (yRightTop - yLeftBottom)
+                );
             }
-
-            int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * imageFromFrame.cols);
-            int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * imageFromFrame.rows);
-            int xRightTop = static_cast<int>(detections.at<float>(i, 5) * imageFromFrame.cols);
-            int yRightTop = static_cast<int>(detections.at<float>(i, 6) * imageFromFrame.rows);
-
-            faces.emplace_back(xLeftBottom,
-                               yLeftBottom,
-                               (xRightTop - xLeftBottom),
-                               (yRightTop - yLeftBottom));
         }
 
-        std::clog << "[INFO] currently watching " << faces.size() << " persons.\n";
+        std::clog << "[INFO] currently watching " << faces.size() << (faces.size() == 1 ? " person" : " persons") << ".\n";
+
         const cv::Scalar borderColor = { 0, 0, 255 };
         const unsigned int borderThickness = 4u;
         for (const cv::Rect &r : faces)
