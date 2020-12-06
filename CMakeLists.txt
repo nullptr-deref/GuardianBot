@@ -23,7 +23,12 @@ FindOpenCVModule(imgproc)
 FindOpenCVModule(highgui)
 FindOpenCVModule(imgcodecs)
 
-target_include_directories(GuardianBotApp PRIVATE ${librealsense2_INCLUDE_DIRS} ${opencv2_INCLUDE_DIRS})
+target_include_directories(GuardianBotApp
+    PRIVATE
+    ${librealsense2_INCLUDE_DIRS}
+    ${opencv2_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/ImageCompare
+)
 
 target_link_libraries(GuardianBotApp
     PRIVATE
@@ -42,3 +47,5 @@ if(WIN32)
         PRIVATE "/MTd"
     )
 endif()
+
+add_subdirectory(ImageCompare)
