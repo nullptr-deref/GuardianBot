@@ -65,5 +65,3 @@ float imgcmp::compareImagesByRegions(const Image &im1, const Image &im2, size_t 
 
     return similarity;
 }
-
-int main() { return 0; }
