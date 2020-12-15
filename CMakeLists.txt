@@ -11,6 +11,7 @@ include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 project(GuardianBot LANGUAGES CXX)
 
 add_subdirectory(ImageCompare)
+add_subdirectory(MatrixCopy)
 add_subdirectory(Serial)
 
 add_executable(GuardianBotApp
