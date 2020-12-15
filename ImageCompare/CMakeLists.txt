@@ -14,6 +14,7 @@ endif()
 
 target_link_libraries(imgcmp
     PRIVATE
+    opencv_core
     opencv_imgproc
     opencv_imgcodecs
 
