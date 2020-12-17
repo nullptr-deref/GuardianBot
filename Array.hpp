@@ -1,20 +1,17 @@
 #include <iostream>
 #include <iterator>
 
-template <typename T, size_t Cap = 1>
+template <typename T>
 class Array
 {
 public:
+    Array() = delete;
     explicit Array(size_t s) : size(s)
     {
         m_data = new T[size];
     }
-    Array() : size(Cap)
-    {
-        m_data = new T[size];
-    }
 
-    explicit Array(T *dat) : size(Cap)
+    explicit Array(T *dat, size_t s) : size(s)
     {
         m_data = new T[size];
         for (unsigned int i = 0; i < size; i++)
