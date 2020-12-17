@@ -33,12 +33,12 @@ auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, s
 
     for (size_t i = 1; i < argc; i++)
     {
-        for (size_t j = 0; j < m_args.size; j++)
+        for (const auto &argMeta : m_args)
         {
-            if (providedArgs[i] == "--" + m_args[j].fullName || providedArgs[i] == "-" + m_args[j].shortName)
+            if (providedArgs[i] == "--" + argMeta.fullName || providedArgs[i] == "-" + argMeta.shortName)
             {
-                parsedArgs.insert({ m_args[j].fullName, providedArgs[i + 1] });
-                i += 1;
+                parsedArgs.insert({ argMeta.fullName, providedArgs[i + 1] });
+                i++;
             }
         }
     }
