@@ -15,6 +15,7 @@
 #include "ArgumentParser.hpp"
 #include "ImageCompare/imgcmp.hpp"
 #include "MatrixCopy/MatrixCopy.hpp"
+#include "Serial/SerialPort.hpp"
 
 using Image = cv::Mat;
 
@@ -25,9 +26,9 @@ int main(int argc, char **argv)
 {
     rs2::context ctx;
 
-    cli::ArgumentParser argParser;
-    argParser.defineArgument("-p", "--prototxt");
-    argParser.defineArgument("-m", "--model");
+    cli::ArgumentParser argParser(2);
+    argParser.defineArgument("-p", "--prototxt", true);
+    argParser.defineArgument("-m", "--model", true);
     Map<std::string, std::string> args;
     try
     {
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
     const unsigned int CAPACITY = 4;
     rs2::frame_queue queue(CAPACITY);
 
-    const std::string windowName = "Viewport";
+    const cv::String windowName = "Viewport";
     cv::namedWindow(windowName, cv::WindowFlags::WINDOW_FULLSCREEN);
 
     const cv::String faceWndName = "Detected face";
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
 
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
+
     std::thread netThread([&]
     {
         std::clog << "[THREAD] Created network thread.\n";
@@ -90,7 +92,7 @@ int main(int argc, char **argv)
     });
     netThread.detach();
 
-    const float defaultConfidence = 0.7f;
+    const float defaultConfidence = 0.8f;
 
     std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
@@ -148,6 +150,7 @@ int main(int argc, char **argv)
 
         cv::imshow(windowName, cvFrame);
     }
+    std::clog << "[THREAD] Exiting main thread loop.\n";
     cv::destroyAllWindows();
 
     return 0;
