@@ -10,48 +10,58 @@ include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 
 project(GuardianBot LANGUAGES CXX)
 
-add_subdirectory(ImageCompare)
-add_subdirectory(MatrixCopy)
-add_subdirectory(Serial)
+option(GB_FIRST_CONFIGURE "Shows if you configuring project for the first time, depending on it project will
+generate main executable build files or not, see README for furher explanation" OFF)
 
-add_executable(GuardianBotApp
-    main.cpp
-    ArgumentParser.cpp
-)
+if(NOT ${GB_FIRST_CONFIGURE})
+    add_subdirectory(ImageCompare)
+    add_subdirectory(MatrixCopy)
+    add_subdirectory(Serial)
 
-OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
-
-FindOpenCVModule(dnn)
-FindOpenCVModule(core)
-FindOpenCVModule(imgproc)
-FindOpenCVModule(highgui)
-FindOpenCVModule(imgcodecs)
-
-target_include_directories(GuardianBotApp
-    PRIVATE
-    ${librealsense2_INCLUDE_DIRS}
-    ${opencv2_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/ImageCompare
-    ${CMAKE_SOURCE_DIR}/Serial
-)
-
-target_link_libraries(GuardianBotApp
-    PRIVATE
-    librealsense2
-    opencv_core
-    opencv_imgproc
-    opencv_highgui
-    opencv_dnn
-    opencv_imgcodecs
-
-    Serial
-    imgcmp
-
-    ${OPENCV_DEPS}
-)
-
-if(WIN32)
-    target_compile_options(GuardianBotApp
-        PRIVATE "/MTd"
+    add_executable(GuardianBotApp
+        main.cpp
+        ArgumentParser.cpp
     )
+
+    OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
+
+    FindOpenCVModule(dnn)
+    FindOpenCVModule(core)
+    FindOpenCVModule(imgproc)
+    FindOpenCVModule(highgui)
+    FindOpenCVModule(imgcodecs)
+
+    target_include_directories(GuardianBotApp
+        PRIVATE
+        ${librealsense2_INCLUDE_DIRS}
+        ${opencv2_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/ImageCompare
+        ${CMAKE_SOURCE_DIR}/Serial
+    )
+
+    target_link_libraries(GuardianBotApp
+        PRIVATE
+        librealsense2
+        opencv_core
+        opencv_imgproc
+        opencv_highgui
+        opencv_dnn
+        opencv_imgcodecs
+
+        Serial
+        imgcmp
+
+        ${OPENCV_DEPS}
+    )
+
+    set_target_properties(GuardianBotApp PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
+
+    if(WIN32)
+        target_compile_options(GuardianBotApp
+            PRIVATE "/MTd"
+        )
+    endif()
 endif()
