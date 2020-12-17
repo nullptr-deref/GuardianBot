@@ -2,14 +2,16 @@
 
 #include <iostream>
 
-void cli::ArgumentParser::defineArgument(const std::string &shortArgName, const std::string &fullArgName)
+void cli::ArgumentParser::defineArgument(const std::string &shortName, const std::string &fullName, bool required)
 {
-    definedArgsCount++;
+    const std::string shortNameTrimmed = shortName[0] == '-' ? shortName.substr(1) : shortName;
+    const std::string fullNameTrimmed = fullName.substr(0, 2) == "--" ? fullName.substr(2) : fullName;
 
-    argsNames.push_back({
-        fullArgName.substr(0, 2) == "--" ? fullArgName.substr(2) : fullArgName,
-        shortArgName[0] == '-' ? shortArgName.substr(1) : shortArgName
-    });
+    if (required)
+    {
+        m_args[m_reqArgc++] = { shortNameTrimmed, fullNameTrimmed };
+    }
+    else m_notReqArgs.push_back({ shortNameTrimmed, fullNameTrimmed });
 }
 
 auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, std::string>
@@ -22,7 +24,7 @@ auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, s
         providedArgs[i] = argv[i];
     }
 
-    if (definedArgsCount*2 + 1 != argc)
+    if (m_reqArgc*2 + 1 != argc)
     {
         throw std::runtime_error("Required command line arguments were not provided.");
     }
@@ -31,11 +33,11 @@ auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, s
 
     for (size_t i = 1; i < argc; i++)
     {
-        for (size_t j = 0; j < argsNames.size(); j++)
+        for (size_t j = 0; j < m_args.size; j++)
         {
-            if (providedArgs[i] == "--" + argsNames[j].fullName || providedArgs[i] == "-" + argsNames[j].shortName)
+            if (providedArgs[i] == "--" + m_args[j].fullName || providedArgs[i] == "-" + m_args[j].shortName)
             {
-                parsedArgs.insert({ argsNames[j].fullName, providedArgs[i + 1] });
+                parsedArgs.insert({ m_args[j].fullName, providedArgs[i + 1] });
                 i += 1;
             }
         }
