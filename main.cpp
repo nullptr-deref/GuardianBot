@@ -6,16 +6,20 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <tuple>
 
 #include <librealsense2/rs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
+#include "Camera.hpp"
 #include "ArgumentParser.hpp"
 #include "ImageCompare/imgcmp.hpp"
 #include "MatrixCopy/MatrixCopy.hpp"
 #include "Serial/SerialPort.hpp"
+#include "events/Emitter.hpp"
+#include "events/Listener.hpp"
 
 using Image = cv::Mat;
 
@@ -24,8 +28,6 @@ inline int clamp(int val, int min, int max);
 
 int main(int argc, char **argv)
 {
-    rs2::context ctx;
-
     cli::ArgumentParser argParser(2);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
@@ -40,17 +42,8 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    rs2::device_list list = ctx.query_devices();
-    if (0 == list.size())
-    {
-        std::cerr << "No devices connected.\n";
-        return 0;
-    }
+    Camera cam;
     
-    rs2::device dev = list.front();
-    rs2::pipeline pipe;
-    pipe.start();
-
     const unsigned int CAPACITY = 4;
     rs2::frame_queue queue(CAPACITY);
 
@@ -64,6 +57,7 @@ int main(int argc, char **argv)
 
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
+
 
     std::thread netThread([&]
     {
@@ -93,12 +87,11 @@ int main(int argc, char **argv)
     netThread.detach();
 
     const float defaultConfidence = 0.8f;
-
     std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
     while (cv::waitKey(1) < 0 && cv::getWindowProperty(windowName, cv::WindowPropertyFlags::WND_PROP_AUTOSIZE) >= 0)
     {
-        const rs2::frameset fs = pipe.wait_for_frames();
+        const rs2::frameset fs = cam.waitForFrames();
         queue.enqueue(fs.get_color_frame());
 
         const rs2::video_frame frame = fs.get_color_frame();
