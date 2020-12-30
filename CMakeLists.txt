@@ -10,10 +10,24 @@ include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 
 project(GuardianBot LANGUAGES CXX)
 
-option(GB_FIRST_CONFIGURE "Shows if you configuring project for the first time, depending on it project will
-generate main executable build files or not, see README for furher explanation" OFF)
+set(<variable> <value>... CACHE <type> <docstring> [FORCE])
 
-if(NOT ${GB_FIRST_CONFIGURE})
+set(LIBREALSENSE_BUILT FALSE CACHE BOOL "Represents wether librealsense external project is built or not")
+set(OPENCV_BUILT FALSE CACHE BOOL "Represents wether opencv external project is built or not")
+
+set(LIBREALSENSE_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/librealsense2/install/include")
+set(OPENCV_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/opencv/install/include")
+
+if(EXISTS ${LIBREALSENSE_INCLUDE_ROOT})
+    unset(LIBREALSENSE_BUILT CACHE)
+    set(LIBREALSENSE_BUILT TRUE CACHE BOOL "Represents wether librealsense external project is built or not" FORCE)
+endif()
+if(EXISTS ${OPENCV_INCLUDE_ROOT})
+    unset(OPENCV_BUILT CACHE)
+    set(OPENCV_BUILT TRUE CACHE BOOL "Represents wether opencv external project is built or not" FORCE)
+endif()
+
+if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     add_subdirectory(ImageCompare)
     add_subdirectory(MatrixCopy)
     add_subdirectory(Serial)
@@ -21,6 +35,7 @@ if(NOT ${GB_FIRST_CONFIGURE})
     add_executable(GuardianBotApp
         main.cpp
         ArgumentParser.cpp
+        Camera.cpp
     )
 
     OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
@@ -37,6 +52,7 @@ if(NOT ${GB_FIRST_CONFIGURE})
         ${opencv2_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/ImageCompare
         ${CMAKE_SOURCE_DIR}/Serial
+        ${CMAKE_SOURCE_DIR}/events
     )
 
     target_link_libraries(GuardianBotApp
@@ -64,4 +80,7 @@ if(NOT ${GB_FIRST_CONFIGURE})
             PRIVATE "/MTd"
         )
     endif()
+else()
+    message(WARNING "Wether librealsense2 or opencv built copies were not found.")
+    message(WARNING "Make sure you've built it using librealsense2-external and opencv-external targets of the projecft first")
 endif()
