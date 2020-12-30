@@ -47,6 +47,17 @@ namespace events
             return earliest;
         }
 
+        Event &peekLatest() const
+        {
+            return latest->ev;
+        }
+
+        Event &peekFirst() const
+        {
+            return first->ev;
+        }
+
+        // Debug method
         // void listAllElements()
         // {
         //     Node *current = first.get();
