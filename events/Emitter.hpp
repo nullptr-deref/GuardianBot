@@ -8,11 +8,11 @@ namespace events
 {
     class Emitter
     {
-        std::shared_ptr<Queue> m_qPtr;
+        std::shared_ptr<Queue> m_queue;
     public:
-        Emitter(Queue &q) : m_qPtr(std::make_shared<Queue>(q)) {}
+        Emitter(Queue &q) : m_queue(std::make_shared<Queue>(q)) {}
     
-        void emit(const Event &e) { m_qPtr->enqueue(e); }
-        std::shared_ptr<Queue> provideQueueLink() const { return m_qPtr; }
+        void emit(const Event &e) { m_queue->enqueue(e); }
+        std::shared_ptr<Queue> provideQueueLink() const { return m_queue; }
     };
 }
