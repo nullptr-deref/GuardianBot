@@ -31,13 +31,13 @@ set(LIBREALSENSE2_INSTALL_DIR ${INSTALL_DIR})
 
 find_library(realsense_Debug NAMES realsense2d PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
 find_library(realsense_Release NAMES realsense2 PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
-find_library(realsense-file_Debug NAMES realsense-filed PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
-find_library(realsense-file_Release NAMES realsense-file PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
+find_library(realsense_file_Debug NAMES realsense-filed PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
+find_library(realsense_file_Release NAMES realsense-file PATHS "${LIBREALSENSE2_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
 
 add_library(realsense-file STATIC IMPORTED)
 set_target_properties(realsense-file PROPERTIES
-    IMPORTED_LOCATION_DEBUG ${realsense-file_Debug}
-    IMPORTED_LOCATION ${realsense-file_Release}
+    IMPORTED_LOCATION_DEBUG ${realsense_file_Debug}
+    IMPORTED_LOCATION ${realsense_file_Release}
     IMPORTED_CONFIGURATIONS "Debug;Release"
 )
 
