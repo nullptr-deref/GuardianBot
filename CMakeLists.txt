@@ -34,6 +34,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     add_subdirectory(Serial)
     add_subdirectory(events)
 
+    include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
     
     add_executable(GuardianBotApp
         main.cpp
@@ -62,6 +63,8 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         ${CMAKE_SOURCE_DIR}/ImageCompare
         ${CMAKE_SOURCE_DIR}/Serial
         ${CMAKE_SOURCE_DIR}/events
+
+        ${DearImGui_INCLUDE_DIRS}
     )
 
     target_link_libraries(GuardianBotApp
@@ -77,6 +80,8 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         glfw
         OpenGL::GL
 
+        dearimgui
+
         Serial
         imgcmp
         events
@@ -84,6 +89,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
 
         ${OPENCV_DEPS}
     )
+    target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
 
     set_target_properties(GuardianBotApp PROPERTIES
         CXX_STANDARD 17
