@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(MatrixCopy LANGUAGES CXX)
 
-add_executable(matrixcpy MatrixCopy.cpp)
+add_library(matrixcpy STATIC MatrixCopy.cpp)
 
 target_include_directories(matrixcpy
     PRIVATE
