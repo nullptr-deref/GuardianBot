@@ -8,7 +8,15 @@
 #include <mutex>
 #include <tuple>
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <librealsense2/rs.hpp>
+
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
@@ -23,7 +31,6 @@
 
 using Image = cv::Mat;
 
-cv::Mat copySubMatrix(const cv::Mat &inp, int startRow, int startCol, int rowCount, int colCount);
 inline int clamp(int val, int min, int max);
 
 int main(int argc, char **argv)
@@ -58,6 +65,96 @@ int main(int argc, char **argv)
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
 
+    size_t humansWatched = 0;
+    std::mutex humansCountMut;
+
+    using namespace events;
+    std::mutex eventsMutex;
+    Queue q;
+    Emitter globalEm(q);
+
+
+    std::thread inputOutputThread([&]
+    {
+        std::clog << "[THREAD] Input thread created.\n";
+
+        if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
+
+        unsigned int outWndWidth = 300;
+        unsigned int outWndHeight = 100;
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        GLFWwindow *IOwindow = glfwCreateWindow(outWndWidth, outWndHeight, "InputOutputWindow", nullptr, nullptr);
+        glfwSetWindowPos(IOwindow, 100, 100);
+
+        glfwMakeContextCurrent(IOwindow);
+        glfwSwapInterval(1);
+
+        if (glewInit() != GLEW_OK) throw std::runtime_error("Could not initialize GLEW.");
+
+        std::string event;
+
+        ImGui::CreateContext();
+        ImGuiIO &io = ImGui::GetIO();
+        io.DisplaySize = { 1.0f, 1.0f };
+        io.Fonts->AddFontDefault();
+        io.Fonts->Build();
+        
+        ImGui::StyleColorsDark();
+
+        ImGui_ImplGlfw_InitForOpenGL(IOwindow, true);
+        ImGui_ImplOpenGL3_Init("#version 150");
+
+        ImVec4 alphaClear = { 0, 0, 0, 0 };
+
+        bool isIOwindowShown = true;
+
+        while (!glfwWindowShouldClose(IOwindow))
+        {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
+            ImGui::SetNextWindowSize({ static_cast<float>(outWndWidth), static_cast<float>(outWndHeight) }, ImGuiCond_Always);
+            ImGui::Begin("Controller", &isIOwindowShown);
+            {
+                std::lock_guard<std::mutex> watchedPersonsGuard(humansCountMut);
+                const std::string infoLabel = "Currently watching %u " + std::string(humansWatched == 1 ? "person" : "persons");
+
+                ImGui::BeginChild("Output");
+                ImGui::Text(infoLabel.c_str(), humansWatched);
+                ImGui::EndChild();
+            }
+            ImGui::End();
+            ImGui::EndFrame();
+
+            int display_w, display_h;
+            glfwGetFramebufferSize(IOwindow, &display_w, &display_h);
+            glViewport(0, 0, display_w, display_h);
+            glClearColor(alphaClear.x, alphaClear.y, alphaClear.z, alphaClear.w);
+            glClear(GL_COLOR_BUFFER_BIT);
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            glfwSwapBuffers(IOwindow);
+            glfwPollEvents();
+
+            std::lock_guard<std::mutex> evGuard(eventsMutex);
+            globalEm.emit(Event(event));
+        }
+
+        ImGui_ImplGlfw_Shutdown();
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui::DestroyContext();
+
+        glfwDestroyWindow(IOwindow);
+        glfwTerminate();
+    });
+    inputOutputThread.detach();
 
     std::thread netThread([&]
     {
@@ -135,13 +232,18 @@ int main(int argc, char **argv)
                 }
             }
         }
-
-        std::clog << "[INFO] currently watching " << faceRects.size() << (faceRects.size() == 1 ? " person" : " persons") << ".\n";
+        // I'm using anonymous scopes in some places to shrink mutex affection range
+        {
+            std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
+            humansWatched = faceRects.size();
+        }
 
         const cv::Scalar borderColor = { 0, 0, 255 };
         const unsigned int borderThickness = 4u;
         for (const cv::Rect &r : faceRects) cv::rectangle(cvFrame, r, borderColor, borderThickness);
 
+        // TODO: maybe I should wrap everything within single window, but I need to convert OpenCV Mats
+        // into OpenGL texture somehow to make this possible
         cv::imshow(windowName, cvFrame);
     }
     std::clog << "[THREAD] Exiting main thread loop.\n";
