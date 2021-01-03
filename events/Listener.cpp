@@ -4,7 +4,7 @@ namespace events
 {
     void Listener::listenTo(const Emitter &em)
     {
-        this->m_queue = em.provideQueueLink();
+        this->m_queue = em.provideQueuePtr();
     }
 
     Event &Listener::peekFirstEvent() const

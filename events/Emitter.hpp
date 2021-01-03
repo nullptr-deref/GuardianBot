@@ -13,6 +13,6 @@ namespace events
         Emitter(Queue &q) : m_queue(std::make_shared<Queue>(q)) {}
     
         void emit(const Event &e) { m_queue->enqueue(e); }
-        std::shared_ptr<Queue> provideQueueLink() const { return m_queue; }
+        std::shared_ptr<Queue> provideQueuePtr() const { return m_queue; }
     };
 }
