@@ -8,9 +8,10 @@ include(${CMAKE_SOURCE_DIR}/CMake/AddLibRealSense.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/AddOpenCV2.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
 
-project(GuardianBot LANGUAGES CXX)
+include(${CMAKE_SOURCE_DIR}/CMake/AddGLFW.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/AddGlew.cmake)
 
-set(<variable> <value>... CACHE <type> <docstring> [FORCE])
+project(GuardianBot LANGUAGES C CXX)
 
 set(LIBREALSENSE_BUILT FALSE CACHE BOOL "Represents wether librealsense external project is built or not")
 set(OPENCV_BUILT FALSE CACHE BOOL "Represents wether opencv external project is built or not")
@@ -31,7 +32,9 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     add_subdirectory(ImageCompare)
     add_subdirectory(MatrixCopy)
     add_subdirectory(Serial)
+    add_subdirectory(events)
 
+    
     add_executable(GuardianBotApp
         main.cpp
         ArgumentParser.cpp
@@ -46,10 +49,16 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     FindOpenCVModule(highgui)
     FindOpenCVModule(imgcodecs)
 
+    find_package(OpenGL REQUIRED)
+
     target_include_directories(GuardianBotApp
         PRIVATE
         ${librealsense2_INCLUDE_DIRS}
         ${opencv2_INCLUDE_DIRS}
+        ${glew_INCLUDE_DIRS}
+        ${glfw_INCLUDE_DIRS}
+        ${OpenGL_INCLUDE_DIRS}
+
         ${CMAKE_SOURCE_DIR}/ImageCompare
         ${CMAKE_SOURCE_DIR}/Serial
         ${CMAKE_SOURCE_DIR}/events
@@ -64,8 +73,14 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         opencv_dnn
         opencv_imgcodecs
 
+        glew
+        glfw
+        OpenGL::GL
+
         Serial
         imgcmp
+        events
+        matrixcpy
 
         ${OPENCV_DEPS}
     )
