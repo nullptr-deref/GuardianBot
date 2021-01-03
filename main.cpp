@@ -104,6 +104,7 @@ int main(int argc, char **argv)
         if (!detectionsQueue.empty())
         {
             while (!faceRects.empty()) faceRects.pop_back();
+
             const cv::Mat detections = detectionsQueue.back();
             detectionsQueue.pop_back();
             for (int i = 0; i < detections.rows; i++)
@@ -155,11 +156,4 @@ inline int clamp(int val, int min, int max)
     if (val > max) return max;
 
     return val;
-}
-
-cv::Mat copySubMatrix(const cv::Mat &inp, int startRow, int startCol, int rowCount, int colCount)
-{
-    const cv::Mat rr = inp.rowRange(clamp(startRow, 0, inp.rows), clamp(startRow + rowCount, 0, inp.rows));
-
-    return rr.colRange(clamp(startCol, 0, rr.cols), clamp(startCol + rowCount, 0, rr.cols));
 }
