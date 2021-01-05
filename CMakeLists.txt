@@ -101,6 +101,8 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
             PRIVATE "/MTd"
         )
     endif()
+
+    # TODO: copy /resources folder into executable directory
 else()
     message(WARNING "Wether librealsense2 or opencv built copies were not found.")
     message(WARNING "Make sure you've built it using librealsense2-external and opencv-external targets of the projecft first")
