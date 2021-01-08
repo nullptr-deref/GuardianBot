@@ -39,8 +39,6 @@ using Image = cv::Mat;
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
 GLuint loadDefaultShaders();
 
-inline int clamp(int val, int min, int max);
-
 int main(int argc, char **argv)
 {
     cli::ArgumentParser argParser(2);
@@ -66,10 +64,7 @@ int main(int argc, char **argv)
     const unsigned int CAPACITY = 4;
     rs2::frame_queue queue(CAPACITY);
 
-    const cv::String faceWndName = "Detected face";
-    cv::namedWindow(faceWndName, cv::WindowFlags::WINDOW_AUTOSIZE);
-
-    const unsigned int RESIZED_IMAGE_SIZE = 256u;
+    // const unsigned int RESIZED_IMAGE_SIZE = 256u;
 
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
@@ -171,7 +166,6 @@ int main(int argc, char **argv)
         bool controllerShown = true;
 
         char eventBuf[imguic::BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
-        char eventBuf[BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
 
         while (!glfwWindowShouldClose(IOwindow))
         {
@@ -219,7 +213,6 @@ int main(int argc, char **argv)
                 ImGui::BeginChild("Output");
                 ImGui::Text(infoLabel.c_str(), humansWatched);
                 ImGui::EndChild();
-                ImGui::InputText("Type a command", eventBuf, BUFFER_SIZE);
             }
             ImGui::End();
 
@@ -294,10 +287,8 @@ int main(int argc, char **argv)
         queue.enqueue(fs.get_color_frame());
 
         const rs2::video_frame frame = fs.get_color_frame();
-
         const Image cvFrame = Image({ frame.get_width(), frame.get_height() }, CV_8UC3, const_cast<void *>(frame.get_data()), cv::Mat::AUTO_STEP);
-
-        cv::Mat prevFace = cv::Mat::zeros(RESIZED_IMAGE_SIZE, RESIZED_IMAGE_SIZE, CV_8UC3);
+        if (cvFrame.dims > 2 || cvFrame.dims < 2) continue;
 
         std::lock_guard<std::mutex> detectionsGuard(detectionsMutex);
         if (!detectionsQueue.empty())
@@ -317,13 +308,6 @@ int main(int argc, char **argv)
                     const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * cvFrame.cols);
                     const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * cvFrame.rows);
 
-                    const cv::Mat faceImage = copySubMatrix(cvFrame, yLeftBottom, xLeftBottom, yRightTop - yLeftBottom, xRightTop - xLeftBottom);
-                    cv::Mat faceResized;
-                    cv::resize(faceImage, faceResized, { RESIZED_IMAGE_SIZE, RESIZED_IMAGE_SIZE }, 0, 0, cv::InterpolationFlags::INTER_LINEAR);
-                    std::cout << "Current face is similar to previous with " << imgcmp::compareImagesByRegions(faceResized, prevFace, 16, 25000) << " confidence\n";
-                    faceResized.copyTo(prevFace);
-                    cv::imshow(faceWndName, faceResized);
-
                     faceRects.emplace_back
                     (
                         xLeftBottom,
@@ -336,7 +320,6 @@ int main(int argc, char **argv)
         }
         //std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
         humansCountMut.lock();
-            std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
         humansWatched = faceRects.size();
         humansCountMut.unlock();
 
@@ -357,20 +340,9 @@ int main(int argc, char **argv)
     return 0;
 }
 
-inline int clamp(int val, int min, int max)
-{
-    if (val < min) return min;
-    if (val > max) return max;
-
-    return val;
-}
-
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip)
 {
-    if(image.empty())
-    {
-        std::cerr << "Image is empty.\n";
-    }
+    if(image.empty()) std::cerr << "Image is empty.\n";
     else
     {
         cv::Mat processed;
