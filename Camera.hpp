@@ -10,6 +10,7 @@ class Camera
 
 public:
     Camera();
+    ~Camera();
 
     rs2::frameset waitForFrames();
 };

@@ -13,3 +13,8 @@ rs2::frameset Camera::waitForFrames()
 {
     return m_pipe.wait_for_frames();
 }
+
+Camera::~Camera()
+{
+    m_pipe.stop();
+}
