@@ -15,6 +15,7 @@
 #include <GLFW/glfw3.h>
 
 #include "GLmisc.hpp"
+#include "ImGuiConstants.hpp"
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -166,9 +167,10 @@ int main(int argc, char **argv)
         ImGui_ImplGlfw_InitForOpenGL(IOwindow, true);
         ImGui_ImplOpenGL3_Init("#version 430");
 
-        bool isIOwindowShown = true;
+        bool humanCounterShown = true;
+        bool controllerShown = true;
 
-        const unsigned int BUFFER_SIZE = 64;
+        char eventBuf[imguic::BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
         char eventBuf[BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
 
         while (!glfwWindowShouldClose(IOwindow))
@@ -206,9 +208,10 @@ int main(int argc, char **argv)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
+            // Watcher part
             ImGui::SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
-            ImGui::SetNextWindowSize({ static_cast<float>(640), static_cast<float>(480) }, ImGuiCond_Always);
-            ImGui::Begin("Controller", &isIOwindowShown);
+            ImGui::SetNextWindowSize({ imguic::watcher::w, imguic::watcher::h }, ImGuiCond_Always);
+            ImGui::Begin("watcher", &humanCounterShown);
             {
                 std::lock_guard<std::mutex> watchedPersonsGuard(humansCountMut);
                 const std::string infoLabel = "Currently watching %u " + std::string(humansWatched == 1 ? "person" : "persons");
@@ -218,6 +221,14 @@ int main(int argc, char **argv)
                 ImGui::EndChild();
                 ImGui::InputText("Type a command", eventBuf, BUFFER_SIZE);
             }
+            ImGui::End();
+
+            // Controller part
+            ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
+            ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
+            ImGui::Begin("controller", &controllerShown);
+                ImGui::InputText("Type a command", eventBuf, imguic::BUFFER_SIZE);
+                ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH });
             ImGui::End();
             ImGui::EndFrame();
 
@@ -323,11 +334,11 @@ int main(int argc, char **argv)
                 }
             }
         }
-        // I'm using anonymous scopes in some places to shrink mutex affection range
-        {
+        //std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
+        humansCountMut.lock();
             std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
-            humansWatched = faceRects.size();
-        }
+        humansWatched = faceRects.size();
+        humansCountMut.unlock();
 
         const cv::Scalar borderColor = { 0, 0, 255 };
         const unsigned int borderThickness = 4u;
