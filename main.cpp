@@ -263,13 +263,22 @@ int main(int argc, char **argv)
             {
                 const int fWidth = frame.as<rs2::video_frame>().get_width();
                 const int fHeight = frame.as<rs2::video_frame>().get_height();
+                
                 const Image im({ fWidth, fHeight }, CV_8UC3, const_cast<void *>(frame.get_data()), cv::Mat::AUTO_STEP);
 
-                const cv::Mat blob = cv::dnn::blobFromImage(im, 1.0f, cv::Size(300, 300), cv::Scalar(104.0, 177.0, 123.0), false, false);
+                const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
+                const cv::Mat blob = cv::dnn::blobFromImage(im, 1.0f, cv::Size(300, 300), mean, false, false);
                 nnet.setInput(blob);
                 const cv::Mat detection = nnet.forward();
 
                 std::lock_guard<std::mutex> detectionsWriteGuard(detectionsMutex);
+                // As far as I understood, cv::Mat::size represents:
+                // size[0] - mat rows
+                // size[1] - mat columns
+                // size[2] - mat depth
+                // size[3] - something like data per detection (especially for detections
+                // produced by cv::Net)
+                
                 const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
                 detectionsQueue.push_back(detections);
             }
