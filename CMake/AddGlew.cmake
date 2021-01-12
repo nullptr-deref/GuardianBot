@@ -15,6 +15,7 @@ ExternalProject_Add(
 
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS=OFF
+        -D BUILD_UTILS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     
     SOURCE_SUBDIR "build/cmake"
