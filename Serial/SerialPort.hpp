@@ -43,5 +43,5 @@ public:
     void write(const char *data, uint count);
 
 private:
-    std::unique_ptr<SerialPortImpl> pImpl;
+    std::unique_ptr<SerialPortImpl> pImpl = nullptr;
 };

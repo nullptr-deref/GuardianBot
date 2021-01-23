@@ -4,11 +4,13 @@
 
 SerialPort::SerialPort(const char* portName, int mode, uint baudrate)
 {
+	pImpl = std::make_unique<SerialPortImpl>();
 	pImpl->open(portName, mode, baudrate);
 }
 
 SerialPort::SerialPort(const char* portName, unsigned long mode, uint baudrate)
 {
+	pImpl = std::make_unique<SerialPortImpl>();
 	pImpl->open(portName, mode, baudrate);
 }
 
