@@ -37,6 +37,8 @@ using Image = cv::Mat;
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
 GLuint loadDefaultShaders();
 
+void clearBuffer(char *buf, const size_t bsize);
+
 int main(int argc, char **argv)
 {
     cli::ArgumentParser argParser(2);
@@ -68,8 +70,9 @@ int main(int argc, char **argv)
     size_t humansWatched = 0;
     std::mutex humansCountMut;
 
-    const unsigned int BUF_SIZE = 256;
-    char arduinoCommandBuf[256] = { 0 };
+    const unsigned int BUF_SIZE = 256u;
+    const unsigned int COMMAND_SIZE = 16;
+    char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
     const char *PORT_NAME = "\\\\.\\COM3";
     SerialPort *port = new SerialPort(PORT_NAME, SerialMode::Write);
@@ -219,7 +222,13 @@ int main(int argc, char **argv)
                 ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
                 if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
                 {
+                    std::clog << "[PORT INFO] Sending: ";
+                    for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
+                    std::clog << '\n';
+
                     port->write(arduinoCommandBuf, BUF_SIZE);
+                    std::clog << "Wrote to port successfully.\n";
+                    clearBuffer(arduinoCommandBuf, BUF_SIZE);
                 }
             ImGui::End();
             ImGui::EndFrame();
@@ -419,4 +428,9 @@ GLuint loadDefaultShaders()
     glDeleteShader(fragmentShaderObj);
 
     return prog;
+}
+
+void clearBuffer(char *buf, const size_t bsize)
+{
+    for (size_t i = 0; i < bsize; i++) buf[i] = 0;
 }
