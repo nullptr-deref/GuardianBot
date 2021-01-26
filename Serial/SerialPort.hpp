@@ -3,14 +3,13 @@
 #include <memory>
 
 #ifdef _WIN32
-
 #include <Windows.h>
 
 namespace SerialMode
 {
-    unsigned long Read = GENERIC_READ;
-    unsigned long Write = GENERIC_WRITE;
-    unsigned long ReadWrite = Read | Write;
+    inline unsigned long Read = GENERIC_READ;
+    inline unsigned long Write = GENERIC_WRITE;
+    inline unsigned long ReadWrite = Read | Write;
 }
 
 #endif
@@ -44,5 +43,5 @@ public:
     void write(const char *data, uint count);
 
 private:
-    std::unique_ptr<SerialPortImpl> pImpl;
+    std::unique_ptr<SerialPortImpl> pImpl = nullptr;
 };

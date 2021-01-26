@@ -9,6 +9,9 @@ typedef unsigned int uint;
 class SerialPortImpl
 {
 public:
+    SerialPortImpl() = default;
+    ~SerialPortImpl() = default;
+
     void open(const char *portName, int mode, uint baudrate = 9600)
     {
         m_hCom = CreateFileA(portName, mode, false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);

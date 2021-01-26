@@ -32,12 +32,12 @@
 #include "ImageCompare/imgcmp.hpp"
 #include "MatrixCopy/MatrixCopy.hpp"
 #include "Serial/SerialPort.hpp"
-#include "events/Emitter.hpp"
-#include "events/Listener.hpp"
 
 using Image = cv::Mat;
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
 GLuint loadDefaultShaders();
+
+void clearBuffer(char *buf, const size_t bsize);
 
 int main(int argc, char **argv)
 {
@@ -64,19 +64,18 @@ int main(int argc, char **argv)
     const unsigned int CAPACITY = 4;
     rs2::frame_queue queue(CAPACITY);
 
-    // const unsigned int RESIZED_IMAGE_SIZE = 256u;
-
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
 
     size_t humansWatched = 0;
     std::mutex humansCountMut;
 
-    using namespace events;
-    std::mutex eventsMutex;
-    Queue q;
-    Emitter globalEm(q);
+    const unsigned int BUF_SIZE = 256u;
+    const unsigned int COMMAND_SIZE = 16;
+    char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
+    const char *PORT_NAME = "\\\\.\\COM3";
+    SerialPort *port = new SerialPort(PORT_NAME, SerialMode::Write);
 
     std::thread inputOutputThread([&]
     {
@@ -165,7 +164,7 @@ int main(int argc, char **argv)
         bool humanCounterShown = true;
         bool controllerShown = true;
 
-        char eventBuf[imguic::BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
+        // char eventBuf[imguic::BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
 
         while (!glfwWindowShouldClose(IOwindow))
         {
@@ -220,8 +219,17 @@ int main(int argc, char **argv)
             ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
             ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
             ImGui::Begin("controller", &controllerShown);
-                ImGui::InputText("Type a command", eventBuf, imguic::BUFFER_SIZE);
-                ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH });
+                ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
+                if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
+                {
+                    std::clog << "[PORT INFO] Sending: ";
+                    for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
+                    std::clog << '\n';
+
+                    port->write(arduinoCommandBuf, BUF_SIZE);
+                    std::clog << "Wrote to port successfully.\n";
+                    clearBuffer(arduinoCommandBuf, BUF_SIZE);
+                }
             ImGui::End();
             ImGui::EndFrame();
 
@@ -233,9 +241,6 @@ int main(int argc, char **argv)
 
             glfwSwapBuffers(IOwindow);
             glfwPollEvents();
-
-            // std::lock_guard<std::mutex> evGuard(eventsMutex);
-            // globalEm.emit(Event(eventBuf));
         }
 
         ImGui_ImplGlfw_Shutdown();
@@ -344,7 +349,7 @@ int main(int argc, char **argv)
         }
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
-    cv::destroyAllWindows();
+    port->close();
 
     return 0;
 }
@@ -423,4 +428,9 @@ GLuint loadDefaultShaders()
     glDeleteShader(fragmentShaderObj);
 
     return prog;
+}
+
+void clearBuffer(char *buf, const size_t bsize)
+{
+    for (size_t i = 0; i < bsize; i++) buf[i] = 0;
 }
