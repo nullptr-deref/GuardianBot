@@ -40,6 +40,7 @@ void serialEvent()
 
         if (readStr.substring(0, 6) == rotateCommand)
         {
+            digitalWrite(LED_BUILTIN, HIGH);
 //            Debugging
 //            digitalWrite(LED_BUILTIN, HIGH);
 //            delay(1000);
@@ -63,6 +64,7 @@ void serialEvent()
 
             mainServo.write(angle);
             delay(1000);
+            digitalWrite(LED_BUILTIN, LOW);
         }
     }
 }
