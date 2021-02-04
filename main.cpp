@@ -37,6 +37,8 @@ using Image = cv::Mat;
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
 GLuint loadDefaultShaders();
 
+const char *PORT_NAME = "\\\\.\\COM5";
+const uint32_t COMMAND_SIZE = 16;
 void clearBuffer(char *buf, const size_t bsize);
 
 int main(int argc, char **argv)
@@ -71,11 +73,11 @@ int main(int argc, char **argv)
     std::mutex humansCountMut;
 
     const unsigned int BUF_SIZE = 256u;
-    const unsigned int COMMAND_SIZE = 16;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
-    const char *PORT_NAME = "\\\\.\\COM3";
+    //TODO: make port name optional (type it through cli or something like that)
     SerialPort *port = new SerialPort(PORT_NAME, SerialMode::Write);
+    port->close();
 
     std::thread inputOutputThread([&]
     {
@@ -222,12 +224,14 @@ int main(int argc, char **argv)
                 ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
                 if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
                 {
+                    port->open(PORT_NAME, SerialMode::Write);
                     std::clog << "[PORT INFO] Sending: ";
                     for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
                     std::clog << '\n';
 
                     port->write(arduinoCommandBuf, BUF_SIZE);
                     std::clog << "Wrote to port successfully.\n";
+                    port->close();
                     clearBuffer(arduinoCommandBuf, BUF_SIZE);
                 }
             ImGui::End();
