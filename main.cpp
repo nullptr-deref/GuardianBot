@@ -32,11 +32,9 @@
 #include "ImageCompare/imgcmp.hpp"
 #include "MatrixCopy/MatrixCopy.hpp"
 #include "Serial/SerialPort.hpp"
+#include "glstuff.hpp"
 
 using Image = cv::Mat;
-
-void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
-GLuint loadDefaultShaders();
 
 const uint32_t COMMAND_SIZE = 16;
 void clearBuffer(char *buf, const size_t bsize);
@@ -147,7 +145,7 @@ int main(int argc, char **argv)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_2D, 0);
         
-        GLuint defaultProgram = loadDefaultShaders();
+        GLuint defaultProgram = gl::loadDefaultShaders();
 
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
@@ -169,16 +167,16 @@ int main(int argc, char **argv)
         {
             gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
 
-            gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
             {
                 std::lock_guard<std::mutex> frameCopyLock(drawnFrameMut);
                 if (!isExpired)
                 {
-                    loadCVmat2GLtexture(frameToDraw, true);
+                    gl::loadCVmat2GLtexture(drawnFrameTexture, frameToDraw, true);
                     isExpired = true;
                 }
             }
             
+            gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
             gl::call([&] { glBindBuffer(GL_ARRAY_BUFFER, vbo); });
             gl::call([&] { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo); });
             gl::call([&] { glBindVertexArray(vao); });
@@ -353,82 +351,6 @@ int main(int argc, char **argv)
     port->close();
 
     return 0;
-}
-
-void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip)
-{
-    if(image.empty()) std::cerr << "Image is empty.\n";
-    else
-    {
-        cv::Mat processed;
-        if (shouldFlip) cv::flip(image, processed, 0);
-        else image.copyTo(processed);
-        
-        gl::call([&] { glTexImage2D(GL_TEXTURE_2D,
-                                    0,
-                                    GL_RGB,
-                                    processed.cols,
-                                    processed.rows,
-                                    0,
-                                    GL_BGR,
-                                    GL_UNSIGNED_BYTE,
-                                    processed.data
-                                   );
-        });
-    }
-}
-
-std::string parseShader(const std::string &filename)
-{
-    std::ifstream inp(filename);
-    std::string buf;
-    std::stringstream ss;
-
-    while(std::getline(inp, buf)) {
-        if (buf.find("shader") != std::string::npos) continue;
-        ss << buf << '\n';
-    }
-
-    return ss.str();
-}
-
-GLuint loadDefaultShaders()
-{
-    const std::string vertexShaderFilePath = std::filesystem::absolute("resources/VertexDefault.shader").string();
-    // Here I'm using 2-step assignment to avoid undefined behaviour when c_str() of a std::string
-    // will point to somewhere (I mean some temporary address which will expire till the end of the operand).
-    // It also makes sense while using such a trick with fragment shader compilation.
-    const std::string vShaderSource = parseShader(vertexShaderFilePath);
-    const char *vShaderSourceRaw = vShaderSource.c_str();
-    GLuint vertexShaderObj = glCreateShader(GL_VERTEX_SHADER);
-    gl::call([&] { glShaderSource(vertexShaderObj, 1, &vShaderSourceRaw, nullptr); });
-    gl::call([&] { glCompileShader(vertexShaderObj); });
-    int vShaderCompileStatus;
-    glGetShaderiv(vertexShaderObj, GL_COMPILE_STATUS, &vShaderCompileStatus);
-
-    const std::string fragmentShaderFilePath = std::filesystem::absolute("resources/FragmentDefault.shader").string();
-    const std::string fShaderSource = parseShader(fragmentShaderFilePath);
-    const char *fShaderSourceRaw = fShaderSource.c_str();
-    GLuint fragmentShaderObj = glCreateShader(GL_FRAGMENT_SHADER);
-    gl::call([&] { glShaderSource(fragmentShaderObj, 1, &fShaderSourceRaw, nullptr); });
-    gl::call([&] { glCompileShader(fragmentShaderObj); });
-    int fShaderCompileStatus;
-    glGetShaderiv(fragmentShaderObj, GL_COMPILE_STATUS, &fShaderCompileStatus);
-
-    GLuint prog = glCreateProgram();
-    gl::call([&] { glAttachShader(prog, vertexShaderObj); });
-    gl::call([&] { glAttachShader(prog, fragmentShaderObj); });
-    gl::call([&] { glLinkProgram(prog); });
-    gl::call([&] { glValidateProgram(prog); });
-    int progLinkStatus;
-    glGetProgramiv(prog, GL_LINK_STATUS, &progLinkStatus);
-
-    if (!(vShaderCompileStatus && fShaderCompileStatus && progLinkStatus)) throw std::runtime_error("Default shaders could not be loaded");
-
-    glDeleteShader(vertexShaderObj);
-    glDeleteShader(fragmentShaderObj);
-
-    return prog;
 }
 
 void clearBuffer(char *buf, const size_t bsize)
