@@ -34,10 +34,10 @@
 #include "Serial/SerialPort.hpp"
 
 using Image = cv::Mat;
+
 void loadCVmat2GLtexture(cv::Mat& image, bool shouldFlip = false);
 GLuint loadDefaultShaders();
 
-const char *PORT_NAME = "\\\\.\\COM5";
 const uint32_t COMMAND_SIZE = 16;
 void clearBuffer(char *buf, const size_t bsize);
 
@@ -46,12 +46,10 @@ int main(int argc, char **argv)
     cli::ArgumentParser argParser(2);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
+    argParser.defineArgument("-c", "--com", true);
     Map<std::string, std::string> args;
-    try
-    {
-        args = argParser.parseArgs(argc, argv);
-    }
-    catch(const std::runtime_error& e)
+    try { args = argParser.parseArgs(argc, argv); }
+    catch(const std::runtime_error &e)
     {
         std::cerr << e.what() << '\n';
         return 0;
@@ -75,8 +73,7 @@ int main(int argc, char **argv)
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
-    //TODO: make port name optional (type it through cli or something like that)
-    SerialPort *port = new SerialPort(PORT_NAME, SerialMode::Write);
+    SerialPort *port = new SerialPort(args["com"].c_str(), SerialMode::Write);
     port->close();
 
     std::thread inputOutputThread([&]
@@ -224,7 +221,7 @@ int main(int argc, char **argv)
                 ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
                 if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
                 {
-                    port->open(PORT_NAME, SerialMode::Write);
+                    port->open(args["com"].c_str(), SerialMode::Write);
                     std::clog << "[PORT INFO] Sending: ";
                     for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
                     std::clog << '\n';
