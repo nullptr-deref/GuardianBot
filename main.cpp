@@ -80,17 +80,7 @@ int main(int argc, char **argv)
 
         if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
 
-        GLFWmonitor *pmonitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *vmode = glfwGetVideoMode(pmonitor);
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        GLFWwindow *IOwindow = glfwCreateWindow(vmode->width - 100, vmode->height - 100, "Viewport", nullptr, nullptr);
-        glfwSetWindowPos(IOwindow, 100, 100);
-
+        GLFWwindow *IOwindow = gl::createDefaultWindow();
         glfwMakeContextCurrent(IOwindow);
         glfwSwapInterval(1);
 
