@@ -98,4 +98,21 @@ namespace gl {
 
         return prog;
     }
+
+    GLuint retrieveTypeSize(GLenum type) {
+        GLuint ret = 0;
+        switch(type) {
+            case GL_UNSIGNED_BYTE: {
+                ret = sizeof(GLbyte);
+            } break;
+            case GL_FLOAT: {
+                ret = sizeof(GLfloat);
+            } break;
+            case GL_INT: {
+                ret = sizeof(GLint);
+            } break;
+        }
+
+        return ret;
+    }
 }

@@ -13,4 +13,5 @@ namespace gl {
     std::string parseShader(const std::string &filename);
     GLuint compileShader(GLenum type, const std::string &src);
     GLuint loadDefaultShaders();
+    GLuint retrieveTypeSize(GLenum type);
 }
