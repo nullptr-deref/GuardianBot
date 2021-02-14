@@ -90,7 +90,7 @@ int main(int argc, char **argv)
         glEnable(GL_BLEND);
 
         const GLuint VERTICES_COUNT = 4;
-        const float verticesData[] =
+        const float verticesData[16] =
         {
             // Positions  // Texture coordinates
             -1.0f,  1.0f, 0.0f, 1.0f,
@@ -99,20 +99,14 @@ int main(int argc, char **argv)
             -1.0f, -1.0f, 0.0f, 0.0f
         };
 
-        GLuint vbo;
-        gl::call([&] { glGenBuffers(1, &vbo); });
-        gl::call([&] { glBindBuffer(GL_ARRAY_BUFFER, vbo); });
-        gl::call([&] { glBufferData(GL_ARRAY_BUFFER, VERTICES_COUNT * 4 * sizeof(float), verticesData, GL_STATIC_DRAW); });
-
-        GLuint vao;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-        // IMPORTANT: before specifying the vertex buffer layout, you need you buffer to be bound to context
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(0, 2, GL_FLOAT, true, 4 * sizeof(float), nullptr);
-        glVertexAttribPointer(1, 2, GL_FLOAT, true, 4 * sizeof(float), (const void *)(2 * sizeof(float)));
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        gl::VertexBuffer vb(verticesData, 4, GL_STATIC_DRAW);
+        gl::VertexArray va;
+        gl::VertexArrayLayout layout;
+        layout.addAttribute(2, GL_FLOAT, true);
+        layout.addAttribute(2, GL_FLOAT, true);
+        va.setLayout(layout);
+        va.enableAttribute(0);
+        va.enableAttribute(1);
 
         const unsigned int ELEMENTS_COUNT = 6;
         const GLuint indices[ELEMENTS_COUNT] =
@@ -120,12 +114,8 @@ int main(int argc, char **argv)
             0, 1, 2,
             0, 2, 3
         };
-        GLuint ibo;
-        glGenBuffers(1, &ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, ELEMENTS_COUNT * sizeof(GLuint), indices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        
+        gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
+
         GLuint drawnFrameTexture;
         glGenTextures(1, &drawnFrameTexture);
         glBindTexture(GL_TEXTURE_2D, drawnFrameTexture);
@@ -151,8 +141,6 @@ int main(int argc, char **argv)
         bool humanCounterShown = true;
         bool controllerShown = true;
 
-        // char eventBuf[imguic::BUFFER_SIZE] = { 0 }; // Should necessarily be filled with zeros!
-
         while (!glfwWindowShouldClose(IOwindow))
         {
             gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
@@ -167,21 +155,17 @@ int main(int argc, char **argv)
             }
             
             gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
-            gl::call([&] { glBindBuffer(GL_ARRAY_BUFFER, vbo); });
-            gl::call([&] { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo); });
-            gl::call([&] { glBindVertexArray(vao); });
-            gl::call([&] { glEnableVertexAttribArray(0); });
-            gl::call([&] { glEnableVertexAttribArray(1); });
+            vb.bind();
+            ib.bind();
+            va.bind();
             gl::call([&] { glUseProgram(defaultProgram); });
 
             gl::call([&] { glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr); });
 
             gl::call([&] { glBindTexture(GL_TEXTURE_2D, 0); });
-            gl::call([&] { glDisableVertexAttribArray(0); });
-            gl::call([&] { glDisableVertexAttribArray(1); });
-            gl::call([&] { glBindBuffer(GL_ARRAY_BUFFER, 0); });
-            gl::call([&] { glBindVertexArray(0); });
-            gl::call([&] { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); });
+            vb.unbind();
+            va.unbind();
+            ib.unbind();
             gl::call([&] { glUseProgram(0); });
 
             ImGui_ImplOpenGL3_NewFrame();
