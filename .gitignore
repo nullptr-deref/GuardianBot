@@ -3,3 +3,4 @@ build
 .vscode
 *.png
 *.ini
+.vs
