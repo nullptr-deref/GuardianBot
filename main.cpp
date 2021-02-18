@@ -115,16 +115,13 @@ int main(int argc, char **argv)
             0, 2, 3
         };
         gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
+        gl::Texture tex(GL_TEXTURE_2D);
+        tex.setAttribute(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        tex.setAttribute(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        tex.setAttribute(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        tex.setAttribute(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        tex.unbind();
 
-        GLuint drawnFrameTexture;
-        glGenTextures(1, &drawnFrameTexture);
-        glBindTexture(GL_TEXTURE_2D, drawnFrameTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        
         GLuint defaultProgram = gl::loadDefaultShaders();
 
         ImGui::CreateContext();
@@ -154,7 +151,8 @@ int main(int argc, char **argv)
                 }
             }
             
-            gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
+            // gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
+            tex.bind();
             vb.bind();
             ib.bind();
             va.bind();
@@ -162,7 +160,7 @@ int main(int argc, char **argv)
 
             gl::call([&] { glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr); });
 
-            gl::call([&] { glBindTexture(GL_TEXTURE_2D, 0); });
+            tex.unbind();
             vb.unbind();
             va.unbind();
             ib.unbind();

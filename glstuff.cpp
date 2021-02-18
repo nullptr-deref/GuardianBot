@@ -20,18 +20,18 @@ namespace gl {
         return wnd;
     }
 
-    void loadCVmat2GLtexture(GLuint &texture, cv::Mat& image, bool shouldFlip)
+    void loadCVmat2GLtexture(const Texture &tex, cv::Mat& image, bool shouldFlip)
     {
         if(image.empty()) std::cerr << "Image is empty.\n";
         else
         {
-            glBindTexture(GL_TEXTURE_2D, texture);
+            tex.bind();
 
             cv::Mat processed;
             if (shouldFlip) cv::flip(image, processed, 0);
             else image.copyTo(processed);
             
-            glTexImage2D(GL_TEXTURE_2D,
+            glTexImage2D(tex.getType(),
                         0,
                         GL_RGB,
                         processed.cols,
@@ -41,7 +41,7 @@ namespace gl {
                         GL_UNSIGNED_BYTE,
                         processed.data
             );
-            glBindTexture(GL_TEXTURE_2D, 0);
+            tex.unbind();
         }
     }
 

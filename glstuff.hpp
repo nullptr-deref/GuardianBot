@@ -7,6 +7,17 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include <type_traits>
+
+namespace meta
+{
+    template <typename T1, typename T2>
+    struct IsSame : std::false_type {};
+
+    template <typename T>
+    struct IsSame<T, T> : std::true_type {};
+}
+
 namespace gl {
     GLFWwindow * createDefaultWindow();
     void loadCVmat2GLtexture(GLuint &texture, cv::Mat &image, bool shouldFlip = false);
@@ -88,5 +99,30 @@ namespace gl {
         GLuint id;
         T *indices;
         unsigned int count;
+    };
+
+    class Texture {
+    public:
+        Texture(GLenum type) : type(type) {
+            glGenTextures(1, &id);
+            this->bind();
+        }
+        ~Texture() noexcept {
+            this->unbind();
+            glDeleteTextures(1, &id);
+        }
+        
+        template <typename Attr>
+        void setAttribute(GLenum attr, Attr val) {
+            if constexpr (meta::IsSame<Attr, int>()) glTexParameteri(type, attr, val);
+        }
+
+        GLenum getType() const { return type; }
+
+        void bind() const { glBindTexture(type, id); }
+        void unbind() const { glBindTexture(type, 0); }
+    private:
+        GLuint id;
+        GLenum type;
     };
 }
