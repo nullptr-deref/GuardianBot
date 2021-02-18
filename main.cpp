@@ -71,6 +71,9 @@ int main(int argc, char **argv)
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
+    char *portName;
+    const size_t portNameSize = 12u;
+
     SerialPort *port = new SerialPort(args["com"].c_str(), SerialMode::Write);
     port->close();
 
@@ -137,6 +140,7 @@ int main(int argc, char **argv)
 
         bool humanCounterShown = true;
         bool controllerShown = true;
+        bool serialShown = true;
 
         while (!glfwWindowShouldClose(IOwindow))
         {
@@ -146,12 +150,11 @@ int main(int argc, char **argv)
                 std::lock_guard<std::mutex> frameCopyLock(drawnFrameMut);
                 if (!isExpired)
                 {
-                    gl::loadCVmat2GLtexture(drawnFrameTexture, frameToDraw, true);
+                    gl::loadCVmat2GLtexture(tex, frameToDraw, true);
                     isExpired = true;
                 }
             }
             
-            // gl::call([&] { glBindTexture(GL_TEXTURE_2D, drawnFrameTexture); });
             tex.bind();
             vb.bind();
             ib.bind();
@@ -202,6 +205,9 @@ int main(int argc, char **argv)
                     clearBuffer(arduinoCommandBuf, BUF_SIZE);
                 }
             ImGui::End();
+            ImGui::Begin("serial", &serialShown);
+                ImGui::InputText("Serial port name", portName, portNameSize);
+            ImGui::End();
             ImGui::EndFrame();
 
             int display_w, display_h;
@@ -219,7 +225,6 @@ int main(int argc, char **argv)
         ImGui::DestroyContext();
 
         glDeleteProgram(defaultProgram);
-        glDeleteTextures(1, &drawnFrameTexture);
         glfwDestroyWindow(IOwindow);
         glfwTerminate();
 
