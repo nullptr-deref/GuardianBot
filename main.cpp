@@ -41,7 +41,7 @@ void clearBuffer(char *buf, const size_t bsize);
 
 int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(2);
+    cli::ArgumentParser argParser(3);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
     argParser.defineArgument("-c", "--com", true);
@@ -71,10 +71,11 @@ int main(int argc, char **argv)
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
-    char *portName;
+    char portName[BUF_SIZE] = { 0 };
     const size_t portNameSize = 12u;
 
-    SerialPort *port = new SerialPort(args["com"].c_str(), SerialMode::Write);
+    const char *portNameProv = args["com"].c_str();
+    SerialPort *port = new SerialPort(portNameProv, SerialMode::Write);
     port->close();
 
     std::thread inputOutputThread([&]
@@ -194,7 +195,7 @@ int main(int argc, char **argv)
                 ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
                 if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
                 {
-                    port->open(args["com"].c_str(), SerialMode::Write);
+                    port->open(portNameProv, SerialMode::Write);
                     std::clog << "[PORT INFO] Sending: ";
                     for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
                     std::clog << '\n';
