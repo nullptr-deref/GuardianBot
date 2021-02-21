@@ -33,6 +33,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     add_subdirectory(MatrixCopy)
     add_subdirectory(Serial)
     add_subdirectory(events)
+    add_subdirectory(gl)
 
     include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
     
@@ -40,8 +41,6 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         main.cpp
         ArgumentParser.cpp
         Camera.cpp
-
-        glstuff.cpp
     )
 
     OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
@@ -79,6 +78,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         opencv_dnn
         opencv_imgcodecs
 
+        gl
         glew
         glfw
         OpenGL::GL
