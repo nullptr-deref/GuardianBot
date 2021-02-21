@@ -32,7 +32,11 @@
 #include "ImageCompare/imgcmp.hpp"
 #include "MatrixCopy/MatrixCopy.hpp"
 #include "Serial/SerialPort.hpp"
-#include "glstuff.hpp"
+#include "gl/glstuff.hpp"
+#include "gl/VertexBuffer.hpp"
+#include "gl/VertexArray.hpp"
+#include "gl/Texture.hpp"
+#include "gl/IndexBuffer.hpp"
 
 using Image = cv::Mat;
 
