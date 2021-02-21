@@ -40,6 +40,8 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         main.cpp
         ArgumentParser.cpp
         Camera.cpp
+
+        glstuff.cpp
     )
 
     OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
@@ -63,6 +65,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         ${CMAKE_SOURCE_DIR}/ImageCompare
         ${CMAKE_SOURCE_DIR}/Serial
         ${CMAKE_SOURCE_DIR}/events
+        ${CMAKE_SOURCE_DIR}
 
         ${DearImGui_INCLUDE_DIRS}
     )
