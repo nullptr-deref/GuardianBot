@@ -45,7 +45,7 @@ namespace gl {
         }
     }
 
-    std::string parseSahder(const std::string &filename) {
+    std::string parseShader(const std::string &filename) {
         std::ifstream inp(filename);
         std::string buf;
         std::stringstream ss;
@@ -63,7 +63,7 @@ namespace gl {
         // will point to somewhere (I mean some temporary address which will expire till the end of the operand).
         // It also makes sense while using such a trick with fragment shader compilation.
         const char *srcRaw = src.c_str();
-        GLuint s = glCreateShader(GL_VERTEX_SHADER);
+        GLuint s = glCreateShader(type);
         glShaderSource(s, 1, &srcRaw, nullptr);
         glCompileShader(s);
 
