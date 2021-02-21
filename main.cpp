@@ -39,6 +39,7 @@
 #include "gl/IndexBuffer.hpp"
 
 using Image = cv::Mat;
+using StdGuard = std::lock_guard<std::mutex>;
 
 const uint32_t COMMAND_SIZE = 16;
 void clearBuffer(char *buf, const size_t bsize);
@@ -59,9 +60,9 @@ int main(int argc, char **argv)
 
     Camera cam;
 
+    std::mutex frameMutex;
     Image frameToDraw;
-    bool isExpired = true;
-    std::mutex drawnFrameMut;
+    std::atomic_bool isExpired = true;
     
     const unsigned int CAPACITY = 4;
     rs2::frame_queue queue(CAPACITY);
@@ -69,8 +70,7 @@ int main(int argc, char **argv)
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
 
-    size_t humansWatched = 0;
-    std::mutex humansCountMut;
+    std::atomic_size_t humansWatched = 0;
 
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
@@ -150,8 +150,8 @@ int main(int argc, char **argv)
             gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
 
             {
-                std::lock_guard<std::mutex> frameCopyLock(drawnFrameMut);
-                if (!isExpired)
+                StdGuard g(frameMutex);
+                if (!isExpired.load())
                 {
                     gl::loadCVmat2GLTexture(tex, frameToDraw, true);
                     isExpired = true;
@@ -181,11 +181,10 @@ int main(int argc, char **argv)
             ImGui::SetNextWindowSize({ imguic::watcher::w, imguic::watcher::h }, ImGuiCond_Always);
             ImGui::Begin("watcher", &humanCounterShown);
             {
-                std::lock_guard<std::mutex> watchedPersonsGuard(humansCountMut);
-                const std::string infoLabel = "Currently watching %u " + std::string(humansWatched == 1 ? "person" : "persons");
+                const std::string infoLabel = "Currently watching %u " + std::string(humansWatched.load() == 1 ? "person" : "persons");
 
                 ImGui::BeginChild("Output");
-                ImGui::Text(infoLabel.c_str(), humansWatched);
+                ImGui::Text(infoLabel.c_str(), humansWatched.load());
                 ImGui::EndChild();
             }
             ImGui::End();
@@ -311,21 +310,15 @@ int main(int argc, char **argv)
                 }
             }
         }
-        //std::lock_guard<std::mutex> humansCountGuard(humansCountMut);
-        humansCountMut.lock();
         humansWatched = faceRects.size();
-        humansCountMut.unlock();
 
         const cv::Scalar borderColor = { 0, 0, 255 };
         const unsigned int borderThickness = 4u;
         for (const cv::Rect &r : faceRects) cv::rectangle(cvFrame, r, borderColor, borderThickness);
 
-        {
-            std::lock_guard<std::mutex> rendering(drawnFrameMut);
-            cvFrame.copyTo(frameToDraw);
-
-            isExpired = false;
-        }
+        StdGuard g(frameMutex);
+        frameToDraw = cvFrame;
+        isExpired = false;
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
     port->close();
