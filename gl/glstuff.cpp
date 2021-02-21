@@ -22,7 +22,7 @@ namespace gl {
         return wnd;
     }
 
-    void loadCVmat2GLtexture(const Texture &tex, cv::Mat& image, bool shouldFlip)
+    void loadCVmat2GLTexture(const Texture &tex, cv::Mat& image, bool shouldFlip)
     {
         if(image.empty()) std::cerr << "Image is empty.\n";
         else

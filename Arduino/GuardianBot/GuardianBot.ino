@@ -1,7 +1,6 @@
 #include <Servo.h>
 
 const int MAIN_PIN = 3;
-
 Servo mainServo;
 
 namespace util
@@ -41,10 +40,6 @@ void serialEvent()
         if (readStr.substring(0, 6) == rotateCommand)
         {
             digitalWrite(LED_BUILTIN, HIGH);
-//            Debugging
-//            digitalWrite(LED_BUILTIN, HIGH);
-//            delay(1000);
-//            digitalWrite(LED_BUILTIN, LOW);
 
             int angle = 0;
             String strAngle = readStr.substring(7, 10);
@@ -58,8 +53,6 @@ void serialEvent()
             {
                 if (isDigit(strAngle[i])) angle += (int)(strAngle[i] - '0') * util::power(10, strAngle.length() - 1 - i);
             }
-            //if (strAngle.length() == 2) angle /= 10;
-            //if (strAngle.length() == 1) angle /= 100;
             Serial.println(angle);
 
             mainServo.write(angle);

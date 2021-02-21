@@ -82,14 +82,14 @@ int main(int argc, char **argv)
     SerialPort *port = new SerialPort(portNameProv, SerialMode::Write);
     port->close();
 
-    std::thread inputOutputThread([&]
+    std::thread interfaceThread([&]
     {
-        std::clog << "[THREAD] Input thread created.\n";
+        std::clog << "[THREAD] Interface thread created.\n";
 
         if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
 
-        GLFWwindow *IOwindow = gl::createDefaultWindow();
-        glfwMakeContextCurrent(IOwindow);
+        GLFWwindow *wnd = gl::createDefaultWindow();
+        glfwMakeContextCurrent(wnd);
         glfwSwapInterval(1);
 
         if (glewInit() != GLEW_OK) throw std::runtime_error("Could not initialize GLEW.");
@@ -113,8 +113,6 @@ int main(int argc, char **argv)
         layout.addAttribute(2, GL_FLOAT, true);
         layout.addAttribute(2, GL_FLOAT, true);
         va.setLayout(layout);
-        va.enableAttribute(0);
-        va.enableAttribute(1);
 
         const unsigned int ELEMENTS_COUNT = 6;
         const GLuint indices[ELEMENTS_COUNT] =
@@ -140,14 +138,14 @@ int main(int argc, char **argv)
         
         ImGui::StyleColorsDark();
 
-        ImGui_ImplGlfw_InitForOpenGL(IOwindow, true);
+        ImGui_ImplGlfw_InitForOpenGL(wnd, true);
         ImGui_ImplOpenGL3_Init("#version 430");
 
         bool humanCounterShown = true;
         bool controllerShown = true;
         bool serialShown = true;
 
-        while (!glfwWindowShouldClose(IOwindow))
+        while (!glfwWindowShouldClose(wnd))
         {
             gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
 
@@ -155,7 +153,7 @@ int main(int argc, char **argv)
                 std::lock_guard<std::mutex> frameCopyLock(drawnFrameMut);
                 if (!isExpired)
                 {
-                    gl::loadCVmat2GLtexture(tex, frameToDraw, true);
+                    gl::loadCVmat2GLTexture(tex, frameToDraw, true);
                     isExpired = true;
                 }
             }
@@ -216,12 +214,12 @@ int main(int argc, char **argv)
             ImGui::EndFrame();
 
             int display_w, display_h;
-            glfwGetFramebufferSize(IOwindow, &display_w, &display_h);
+            glfwGetFramebufferSize(wnd, &display_w, &display_h);
             glViewport(0, 0, display_w, display_h);
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-            glfwSwapBuffers(IOwindow);
+            glfwSwapBuffers(wnd);
             glfwPollEvents();
         }
 
@@ -230,12 +228,12 @@ int main(int argc, char **argv)
         ImGui::DestroyContext();
 
         glDeleteProgram(defaultProgram);
-        glfwDestroyWindow(IOwindow);
+        glfwDestroyWindow(wnd);
         glfwTerminate();
 
-        std::clog << "[THREAD] Input thread closed.\n";
+        std::clog << "[THREAD] Interface thread closed.\n";
     });
-    inputOutputThread.detach();
+    interfaceThread.detach();
 
     std::thread netThread([&]
     {

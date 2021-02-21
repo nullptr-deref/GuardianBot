@@ -10,7 +10,7 @@
 namespace gl {
     class Texture;
     GLFWwindow * createDefaultWindow();
-    void loadCVmat2GLtexture(const Texture &texture, cv::Mat &image, bool shouldFlip = false);
+    void loadCVmat2GLTexture(const Texture &texture, cv::Mat &image, bool shouldFlip = false);
     std::string parseShader(const std::string &filename);
     GLuint compileShader(GLenum type, const std::string &src);
     GLuint loadDefaultShaders();
