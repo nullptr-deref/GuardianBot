@@ -11,7 +11,8 @@ namespace gl {
         }
         explicit VertexBuffer(const T *data, unsigned int count, GLenum usage) {
             glGenBuffers(1, &id);
-            glNamedBufferData(id, count * sizeof(T), data, usage);
+            this->bind();
+            glBufferData(GL_ARRAY_BUFFER, count * sizeof(T), data, usage);
         }
         ~VertexBuffer() {
             glDeleteBuffers(1, &id);
