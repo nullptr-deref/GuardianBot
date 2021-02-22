@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-project(glfw LANGUAGES C CXX)
+project(glew LANGUAGES C CXX)
 
 ExternalProject_Add(
     glew-external
@@ -14,7 +14,7 @@ ExternalProject_Add(
     URL https://github.com/nigels-com/glew/releases/download/glew-2.1.0/glew-2.1.0.zip
 
     CMAKE_ARGS
-        -DBUILD_SHARED_LIBS=OFF
+        -DBUILD_SHARED_LIBS=${GB_SHARED_GL}
         -D BUILD_UTILS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     
@@ -23,15 +23,30 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(glew-external INSTALL_DIR)
 set(GLEW_INSTALL_DIR ${INSTALL_DIR})
+set(GLEW_LIB_DIR "${GLEW_INSTALL_DIR}/lib")
 
-find_library(glew_Debug NAMES libglew32d PATHS "${GLEW_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
-find_library(glew_Release NAMES libglew32 PATHS "${GLEW_INSTALL_DIR}/lib" NO_DEFAULT_PATH)
+if(${GB_SHARED_GL})
+    find_library(glew_imp_Debug NAMES glew32d PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(glew_imp_Release NAMES glew32 PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
 
-add_library(glew STATIC IMPORTED)
-set_target_properties(glew PROPERTIES
-    IMPORTED_LOCATION_DEBUG ${glew_Debug}
-    IMPORTED_LOCATION ${glew_Release}
-    IMPORTED_CONFIGURATIONS "Debug;Release"
-)
+    add_library(glew SHARED IMPORTED)
+    set_target_properties(glew PROPERTIES
+        # IMPORTED_IMPLIB_Debug ${glew_imp_Debug}
+        # IMPORTED_IMPLIB_Release ${glew_imp_Release}
+        IMPORTED_IMPLIB ${glew_imp_Debug}
+        IMPORTED_CONFIGURATIONS "Debug;Release"
+    )
+    set(glew_DLL_DIR ${GLEW_INSTALL_DIR}/bin)
+else()
+    find_library(glew_Debug NAMES libglew32d PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(glew_Release NAMES libglew32 PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
+
+    add_library(glew STATIC IMPORTED)
+    set_target_properties(glew PROPERTIES
+        IMPORTED_LOCATION_DEBUG ${glew_Debug}
+        IMPORTED_LOCATION ${glew_Release}
+        IMPORTED_CONFIGURATIONS "Debug;Release"
+    )
+endif()
 
 set(glew_INCLUDE_DIRS ${GLEW_INSTALL_DIR}/include)
