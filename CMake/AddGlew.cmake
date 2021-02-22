@@ -31,11 +31,17 @@ if(${GB_SHARED_GL})
 
     add_library(glew SHARED IMPORTED)
     set_target_properties(glew PROPERTIES
-        # IMPORTED_IMPLIB_Debug ${glew_imp_Debug}
-        # IMPORTED_IMPLIB_Release ${glew_imp_Release}
-        IMPORTED_IMPLIB ${glew_imp_Debug}
         IMPORTED_CONFIGURATIONS "Debug;Release"
     )
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        set_target_properties(glew PROPERTIES
+            IMPORTED_IMPLIB ${glew_imp_Debug}
+        )
+    else()
+        set_target_properties(glew PROPERTIES
+            IMPORTED_IMPLIB ${glew_imp_Release}
+        )
+    endif()
     set(glew_DLL_DIR ${GLEW_INSTALL_DIR}/bin)
 else()
     find_library(glew_Debug NAMES libglew32d PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
