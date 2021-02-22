@@ -11,8 +11,7 @@ target_include_directories(dearimgui PRIVATE
     ${glfw_INCLUDE_DIRS}
     ${glew_INCLUDE_DIRS}
 )
-target_compile_definitions(dearimgui
-    PRIVATE
-    IMGUI_IMPL_OPENGL_LOADER_GLEW
-    GLEW_STATIC
-)
+target_compile_definitions(dearimgui PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLEW)
+if(NOT ${GB_SHARED_GL})
+    target_compile_definitions(dearimgui PRIVATE GLEW_STATIC)
+endif()

@@ -19,6 +19,8 @@ set(OPENCV_BUILT FALSE CACHE BOOL "Represents wether opencv external project is 
 set(LIBREALSENSE_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/librealsense2/install/include")
 set(OPENCV_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/opencv/install/include")
 
+option(GB_SHARED_GL "Wether project should use static or shared OpenGL dependencies" TRUE)
+
 if(EXISTS ${LIBREALSENSE_INCLUDE_ROOT})
     unset(LIBREALSENSE_BUILT CACHE)
     set(LIBREALSENSE_BUILT TRUE CACHE BOOL "Represents wether librealsense external project is built or not" FORCE)
@@ -30,9 +32,7 @@ endif()
 
 if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     add_subdirectory(ImageCompare)
-    add_subdirectory(MatrixCopy)
     add_subdirectory(Serial)
-    add_subdirectory(events)
     add_subdirectory(gl)
 
     include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
@@ -86,13 +86,13 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         dearimgui
 
         Serial
-        imgcmp
-        events
-        matrixcpy
 
         ${OPENCV_DEPS}
     )
-    target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
+
+    if (NOT ${GB_SHARED_GL})
+        target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
+    endif()
 
     set_target_properties(GuardianBotApp PROPERTIES
         CXX_STANDARD 17
@@ -106,6 +106,13 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     endif()
 
     # TODO: copy /resources folder into executable directory
+    set(GLFW_DLL_NAME glfw3.dll)
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        set(GLEW_DLL_NAME glew32d.dll)
+    else()
+        set(GLEW_DLL_NAME glew32.dll)
+    endif()
+    file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 else()
     message(WARNING "Wether librealsense2 or opencv built copies were not found.")
     message(WARNING "Make sure you've built it using librealsense2-external and opencv-external targets of the projecft first")
