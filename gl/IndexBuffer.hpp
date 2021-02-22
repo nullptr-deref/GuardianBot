@@ -12,7 +12,7 @@ namespace gl {
         explicit IndexBuffer(const T *indices, unsigned int count, GLenum usage) {
             glGenBuffers(1, &id);
             this->bind();
-            glBufferData(id, count * sizeof(T), (const void *)indices, usage);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(T), (const void *)indices, usage);
         }
         
         void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id); }
