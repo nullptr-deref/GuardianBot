@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 #include <GL/glew.h>
@@ -9,6 +10,8 @@ namespace gl {
     public:
         Shader(GLenum type);
         explicit Shader(GLenum type, const std::string &src);
+
+        static std::string parseFromFile(const std::filesystem::path &filepath);
 
         void setSource(const std::string &src);
         bool compile();

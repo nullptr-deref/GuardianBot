@@ -1,5 +1,8 @@
 #include "Shader.hpp"
 
+#include <fstream>
+#include <sstream>
+
 namespace gl {
     Shader::Shader(GLenum type) {
         id = glCreateShader(type);
@@ -20,4 +23,14 @@ namespace gl {
         return static_cast<bool>(res);
     }
     GLuint Shader::getID() const { return id; }
+
+    std::string Shader::parseFromFile(const std::filesystem::path &filepath) {
+        std::ifstream inp(filepath.string());
+        std::string buf;
+        std::stringstream ss;
+
+        while(std::getline(inp, buf)) ss << buf << '\n';
+
+        return ss.str();
+    }
 }
