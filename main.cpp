@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             -1.0f, -1.0f, 0.0f, 0.0f
         };
 
-        gl::VertexBuffer vb(verticesData, 4, GL_STATIC_DRAW);
+        gl::VertexBuffer vb(verticesData, VERTICES_COUNT * 4, GL_STATIC_DRAW);
         gl::VertexArray va;
         gl::VertexArrayLayout layout;
         layout.addAttribute(2, GL_FLOAT, true);
