@@ -33,3 +33,8 @@ const char* SerialPort::read()
 {
 	return pImpl->read();
 }
+
+std::vector<std::string> SerialPort::queryAvailable()
+{
+	return pImpl->queryAvailable();
+}

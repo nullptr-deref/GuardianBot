@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+#include <vector>
 #include <memory>
 
 #ifdef _WIN32
@@ -41,6 +43,7 @@ public:
     void close();
     const char *read();
     void write(const char *data, uint count);
+    std::vector<std::string> queryAvailable();
 
 private:
     std::unique_ptr<SerialPortImpl> pImpl = nullptr;
