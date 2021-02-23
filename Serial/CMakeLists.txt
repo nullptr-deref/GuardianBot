@@ -4,7 +4,6 @@ project(Serial LANGUAGES CXX)
 
 add_library(Serial STATIC
     SerialPort.cpp
-    SerialPortImpl.cpp
 )
 set_target_properties(Serial PROPERTIES
     CXX_STANDARD 17
