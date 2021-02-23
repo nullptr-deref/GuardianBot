@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include <tuple>
 
 #include <GL/glew.h>
@@ -16,7 +17,6 @@
 
 #include "ImGuiConstants.hpp"
 
-#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -36,18 +36,19 @@
 #include "gl/IndexBuffer.hpp"
 #include "gl/Program.hpp"
 
+#include "ImGuiWindows.hpp"
+
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
 const uint32_t COMMAND_SIZE = 16;
-void clearBuffer(char *buf, const size_t bsize);
+
 
 int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(3);
+    cli::ArgumentParser argParser(2);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
-    argParser.defineArgument("-c", "--com", true);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -55,6 +56,11 @@ int main(int argc, char **argv)
         std::cerr << e.what() << '\n';
         return 0;
     }
+
+    // I check for available ports here because later usage of this function deadly
+    // interrupts RealSense device work and it crashes.
+    // This must be placed before Camera ctor call at all costs!
+    std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
     Camera cam;
 
@@ -73,12 +79,7 @@ int main(int argc, char **argv)
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
-    char portName[BUF_SIZE] = { 0 };
-    const size_t portNameSize = 12u;
-
-    const char *portNameProv = args["com"].c_str();
-    SerialPort *port = new SerialPort(portNameProv, SerialMode::Write);
-    port->close();
+    std::unique_ptr<SerialPort> connected = nullptr;
 
     std::thread interfaceThread([&]
     {
@@ -135,13 +136,11 @@ int main(int argc, char **argv)
         io.Fonts->Build();
         
         ImGui::StyleColorsDark();
+        ImGuiStyle &style = ImGui::GetStyle();
+        style.FrameBorderSize = 1.0f;
 
         ImGui_ImplGlfw_InitForOpenGL(wnd, true);
         ImGui_ImplOpenGL3_Init("#version 430");
-
-        bool humanCounterShown = true;
-        bool controllerShown = true;
-        bool serialShown = true;
 
         while (!glfwWindowShouldClose(wnd))
         {
@@ -163,41 +162,8 @@ int main(int argc, char **argv)
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-
-            // Watcher part
-            ImGui::SetNextWindowPos({ 0, 0 }, ImGuiCond_Always);
-            ImGui::SetNextWindowSize({ imguic::watcher::w, imguic::watcher::h }, ImGuiCond_Always);
-            ImGui::Begin("watcher", &humanCounterShown);
-            {
-                const std::string infoLabel = "Currently watching %u " + std::string(humansWatched.load() == 1 ? "person" : "persons");
-
-                ImGui::BeginChild("Output");
-                ImGui::Text(infoLabel.c_str(), humansWatched.load());
-                ImGui::EndChild();
-            }
-            ImGui::End();
-
-            // Controller part
-            ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
-            ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
-            ImGui::Begin("controller", &controllerShown);
-                ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
-                if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
-                {
-                    port->open(portNameProv, SerialMode::Write);
-                    std::clog << "[PORT INFO] Sending: ";
-                    for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
-                    std::clog << '\n';
-
-                    port->write(arduinoCommandBuf, BUF_SIZE);
-                    std::clog << "Wrote to port successfully.\n";
-                    port->close();
-                    clearBuffer(arduinoCommandBuf, BUF_SIZE);
-                }
-            ImGui::End();
-            ImGui::Begin("serial", &serialShown);
-                ImGui::InputText("Serial port name", portName, portNameSize);
-            ImGui::End();
+            wnd::showWatcherWindow(humansWatched.load());
+            wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
             ImGui::EndFrame();
 
             int display_w, display_h;
@@ -309,12 +275,7 @@ int main(int argc, char **argv)
         isExpired = false;
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
-    port->close();
+    connected->close();
 
     return 0;
-}
-
-void clearBuffer(char *buf, const size_t bsize)
-{
-    for (size_t i = 0; i < bsize; i++) buf[i] = 0;
 }
