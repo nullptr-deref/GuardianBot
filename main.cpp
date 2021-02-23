@@ -14,7 +14,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "GLmisc.hpp"
 #include "ImGuiConstants.hpp"
 
 #include <imgui.h>
@@ -146,7 +145,7 @@ int main(int argc, char **argv)
 
         while (!glfwWindowShouldClose(wnd))
         {
-            gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
+            glClear(GL_COLOR_BUFFER_BIT);
 
             {
                 StdGuard g(frameMutex);
@@ -158,7 +157,7 @@ int main(int argc, char **argv)
             }
             tex.bind();
 
-            gl::call([&] { glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr); });
+            glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
             tex.unbind();
 
             ImGui_ImplOpenGL3_NewFrame();

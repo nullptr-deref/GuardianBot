@@ -1,5 +1,5 @@
 #include "Program.hpp"
-#include "GLmisc.hpp"
+
 namespace gl {
     Program::Program() {
         id = glCreateProgram();
