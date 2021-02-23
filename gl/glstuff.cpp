@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "Texture.hpp"
+#include "Shader.hpp"
+#include "Program.hpp"
 
 namespace gl {
     GLFWwindow * createDefaultWindow() {
@@ -47,58 +49,28 @@ namespace gl {
         }
     }
 
-    std::string parseShader(const std::string &filename) {
-        std::ifstream inp(filename);
-        std::string buf;
-        std::stringstream ss;
+    Program loadDefaultShaders() {
+        const std::filesystem::path vertfp = std::filesystem::absolute("resources/VertexDefault.shader");
+        Shader vertex(GL_VERTEX_SHADER, Shader::parseFromFile(vertfp));
+        const bool isVertexReady = vertex.compile();
 
-        while(std::getline(inp, buf)) {
-            if (buf.find("shader") != std::string::npos) continue;
-            ss << buf << '\n';
-        }
+        const std::filesystem::path fragfp = std::filesystem::absolute("resources/FragmentDefault.shader");
+        Shader frag(GL_FRAGMENT_SHADER, Shader::parseFromFile(fragfp));
+        const bool isFragReady = frag.compile();
 
-        return ss.str();
-    }
+        Program p;
+        p.attachShader(vertex);
+        p.attachShader(frag);
+        const bool li = p.link();
+        const bool v = p.validate();
+        p.detachShader(vertex);
+        p.detachShader(frag);
+        std::clog << p.getInfoLog() << '\n';
+        const bool isProgReady = v && li;
 
-    GLuint compileShader(GLenum type, const std::string &src) {
-        // Here I'm using 2-step assignment to avoid undefined behaviour when c_str() of a std::string
-        // will point to somewhere (I mean some temporary address which will expire till the end of the operand).
-        // It also makes sense while using such a trick with fragment shader compilation.
-        const char *srcRaw = src.c_str();
-        GLuint s = glCreateShader(type);
-        glShaderSource(s, 1, &srcRaw, nullptr);
-        glCompileShader(s);
+        if (!(isVertexReady && isFragReady && isProgReady)) throw std::runtime_error("Default shaders could not be loaded");
 
-        return s;
-    }
-
-    GLuint loadDefaultShaders() {
-        const std::string vertexShaderFilePath = std::filesystem::absolute("resources/VertexDefault.shader").string();
-        const std::string vShaderSource = parseShader(vertexShaderFilePath);
-        GLuint vertexShaderObj = compileShader(GL_VERTEX_SHADER, vShaderSource);
-        int vShaderCompileStatus;
-        glGetShaderiv(vertexShaderObj, GL_COMPILE_STATUS, &vShaderCompileStatus);
-
-        const std::string fragmentShaderFilePath = std::filesystem::absolute("resources/FragmentDefault.shader").string();
-        const std::string fShaderSource = parseShader(fragmentShaderFilePath);
-        GLuint fragmentShaderObj = compileShader(GL_FRAGMENT_SHADER, fShaderSource);
-        int fShaderCompileStatus;
-        glGetShaderiv(fragmentShaderObj, GL_COMPILE_STATUS, &fShaderCompileStatus);
-
-        GLuint prog = glCreateProgram();
-        glAttachShader(prog, vertexShaderObj);
-        glAttachShader(prog, fragmentShaderObj);
-        glLinkProgram(prog);
-        glValidateProgram(prog);
-        int progLinkStatus;
-        glGetProgramiv(prog, GL_LINK_STATUS, &progLinkStatus);
-
-        if (!(vShaderCompileStatus && fShaderCompileStatus && progLinkStatus)) throw std::runtime_error("Default shaders could not be loaded");
-
-        glDeleteShader(vertexShaderObj);
-        glDeleteShader(fragmentShaderObj);
-
-        return prog;
+        return p;
     }
 
     GLuint retrieveTypeSize(GLenum type) {

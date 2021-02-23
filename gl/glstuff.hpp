@@ -7,12 +7,12 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include "Program.hpp"
+
 namespace gl {
     class Texture;
     GLFWwindow * createDefaultWindow();
     void loadCVmat2GLTexture(const Texture &texture, cv::Mat &image, bool shouldFlip = false);
-    std::string parseShader(const std::string &filename);
-    GLuint compileShader(GLenum type, const std::string &src);
-    GLuint loadDefaultShaders();
+    Program loadDefaultShaders();
     GLuint retrieveTypeSize(GLenum type);
 }

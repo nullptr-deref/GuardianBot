@@ -6,10 +6,10 @@ add_library(gl STATIC
     glstuff.cpp
     VertexArray.cpp
     VertexArrayLayout.cpp
+    Program.cpp
+    Shader.cpp
 )
 
-# include(${CMAKE_SOURCE_DIR}/CMake/AddGlew.cmake)
-# include(${CMAKE_SOURCE_DIR}/CMake/AddGLFW.cmake)
 find_package(OpenGL REQUIRED)
 
 target_include_directories(gl PRIVATE

@@ -31,7 +31,6 @@ if(EXISTS ${OPENCV_INCLUDE_ROOT})
 endif()
 
 if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
-    add_subdirectory(ImageCompare)
     add_subdirectory(Serial)
     add_subdirectory(gl)
 

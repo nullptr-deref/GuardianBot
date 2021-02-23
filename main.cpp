@@ -14,7 +14,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "GLmisc.hpp"
 #include "ImGuiConstants.hpp"
 
 #include <imgui.h>
@@ -29,14 +28,13 @@
 
 #include "Camera.hpp"
 #include "ArgumentParser.hpp"
-#include "ImageCompare/imgcmp.hpp"
-#include "MatrixCopy/MatrixCopy.hpp"
 #include "Serial/SerialPort.hpp"
 #include "gl/glstuff.hpp"
 #include "gl/VertexBuffer.hpp"
 #include "gl/VertexArray.hpp"
 #include "gl/Texture.hpp"
 #include "gl/IndexBuffer.hpp"
+#include "gl/Program.hpp"
 
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
@@ -126,9 +124,9 @@ int main(int argc, char **argv)
         tex.setAttribute(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         tex.setAttribute(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         tex.setAttribute(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        tex.unbind();
 
-        GLuint defaultProgram = gl::loadDefaultShaders();
+        const gl::Program prog = gl::loadDefaultShaders();
+        prog.use();
 
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
@@ -147,7 +145,7 @@ int main(int argc, char **argv)
 
         while (!glfwWindowShouldClose(wnd))
         {
-            gl::call([] { glClear(GL_COLOR_BUFFER_BIT); });
+            glClear(GL_COLOR_BUFFER_BIT);
 
             {
                 StdGuard g(frameMutex);
@@ -157,20 +155,10 @@ int main(int argc, char **argv)
                     isExpired = true;
                 }
             }
-            
             tex.bind();
-            vb.bind();
-            ib.bind();
-            va.bind();
-            gl::call([&] { glUseProgram(defaultProgram); });
 
-            gl::call([&] { glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr); });
-
+            glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
             tex.unbind();
-            vb.unbind();
-            va.unbind();
-            ib.unbind();
-            gl::call([&] { glUseProgram(0); });
 
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -222,11 +210,11 @@ int main(int argc, char **argv)
             glfwPollEvents();
         }
 
+        prog.del();
         ImGui_ImplGlfw_Shutdown();
         ImGui_ImplOpenGL3_Shutdown();
         ImGui::DestroyContext();
 
-        glDeleteProgram(defaultProgram);
         glfwDestroyWindow(wnd);
         glfwTerminate();
 
