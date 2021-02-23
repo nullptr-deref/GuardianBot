@@ -7,7 +7,6 @@
 #include "Texture.hpp"
 #include "Shader.hpp"
 #include "Program.hpp"
-#include "GLmisc.hpp"
 
 namespace gl {
     GLFWwindow * createDefaultWindow() {
@@ -64,6 +63,8 @@ namespace gl {
         p.attachShader(frag);
         const bool li = p.link();
         const bool v = p.validate();
+        p.detachShader(vertex);
+        p.detachShader(frag);
         std::clog << p.getInfoLog() << '\n';
         const bool isProgReady = v && li;
 

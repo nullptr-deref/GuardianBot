@@ -8,15 +8,15 @@ namespace gl {
     class Program {
     public:
         Program();
-        ~Program() noexcept;
+        ~Program() noexcept = default;
 
         void attachShader(const Shader &shader);
-        void attachShader(GLuint shaderID) { glAttachShader(id, shaderID); }
-        bool link();
-        bool validate();
+        void detachShader(const Shader &shader);
+        bool link() const;
+        bool validate() const;
         void use() const;
         void stopUse() const;
-        std::string getInfoLog();
+        std::string getInfoLog() const;
 
         GLuint getID() const;
 
