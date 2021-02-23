@@ -16,6 +16,7 @@ namespace gl {
         bool validate() const;
         void use() const;
         void stopUse() const;
+        void del() const;
         std::string getInfoLog() const;
 
         GLuint getID() const;

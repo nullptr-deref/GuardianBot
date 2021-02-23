@@ -35,6 +35,10 @@ namespace gl {
 
         return res;
     }
+    void Program::del() const {
+        glUseProgram(0);
+        glDeleteProgram(id);
+    }
 
     void Program::use() const { glUseProgram(id); }
     void Program::stopUse() const { glUseProgram(0); }

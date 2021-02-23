@@ -211,6 +211,7 @@ int main(int argc, char **argv)
             glfwPollEvents();
         }
 
+        prog.del();
         ImGui_ImplGlfw_Shutdown();
         ImGui_ImplOpenGL3_Shutdown();
         ImGui::DestroyContext();
