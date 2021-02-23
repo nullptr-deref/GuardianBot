@@ -56,10 +56,7 @@ public:
         this->size = other.size;
         this->m_data = new T[size];
 
-        for (unsigned int i = 0; i < size; i++)
-        {
-            m_data[i] = other[i];
-        }
+        for (unsigned int i = 0; i < size; i++) m_data[i] = other[i];
 
         return *this;
     }
