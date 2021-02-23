@@ -11,14 +11,15 @@ typedef unsigned int uint;
 class SerialPortImpl
 {
 public:
-    SerialPortImpl() = default;
+    SerialPortImpl(const std::string &portName, unsigned long mode, uint32_t baudrate)
+    : name(portName), mode(mode), baudrate(baudrate) {}
     ~SerialPortImpl() = default;
 
-    void open(const char *portName, int mode, uint baudrate = 9600)
+    void open()
     {
-        m_hCom = CreateFileA(portName, mode, false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);
+        m_hCom = CreateFileA(name.c_str(), mode, false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);
 
-        if (INVALID_HANDLE_VALUE == m_hCom) throw std::runtime_error("Cannot connect to serial port [" + std::string(portName) + ']');
+        if (INVALID_HANDLE_VALUE == m_hCom) throw std::runtime_error("Cannot connect to serial port [" + name + ']');
 
         DCB m_serialParams { 0 };
         m_serialParams.DCBlength = sizeof(m_serialParams);
@@ -71,7 +72,7 @@ public:
         if (!isClosed) throw std::runtime_error("Could not close the serial port.");
     }
 
-    std::vector<std::string> queryAvailable()
+    static std::vector<std::string> queryAvailable()
     {
         std::vector<std::string> availablePorts;
         const size_t BUF_LENGTH = 1024u;
@@ -89,6 +90,9 @@ public:
 private:
     HANDLE m_hCom;
     DCB m_serialParams;
+    std::string name;
+    unsigned long mode;
+    uint32_t baudrate;
 };
 
 #endif

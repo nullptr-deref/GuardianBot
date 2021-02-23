@@ -2,21 +2,19 @@
 
 #include "SerialPortImpl.cpp"
 
-SerialPort::SerialPort(const char* portName, int mode, uint baudrate)
+SerialPort::SerialPort(const std::string &portName, int mode, uint baudrate)
 {
-	pImpl = std::make_unique<SerialPortImpl>();
-	pImpl->open(portName, mode, baudrate);
+	pImpl = std::make_unique<SerialPortImpl>(portName, mode, baudrate);
 }
 
-SerialPort::SerialPort(const char* portName, unsigned long mode, uint baudrate)
+SerialPort::SerialPort(const std::string &portName, unsigned long mode, uint baudrate)
 {
-	pImpl = std::make_unique<SerialPortImpl>();
-	pImpl->open(portName, mode, baudrate);
+	pImpl = std::make_unique<SerialPortImpl>(portName, mode, baudrate);
 }
 
-void SerialPort::open(const char *portName, int mode)
+void SerialPort::open()
 {
-	pImpl->open(portName, mode);
+	pImpl->open();
 }
 
 void SerialPort::close()
@@ -36,5 +34,5 @@ const char* SerialPort::read()
 
 std::vector<std::string> SerialPort::queryAvailable()
 {
-	return pImpl->queryAvailable();
+	return SerialPortImpl::queryAvailable();
 }

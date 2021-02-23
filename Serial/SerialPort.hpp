@@ -36,15 +36,16 @@ typedef unsigned int uint;
 class SerialPort
 {
 public:
-    SerialPort(const char *portName, int mode = SerialMode::ReadWrite, uint baudrate = 9600u);
-    SerialPort(const char *portName, unsigned long mode = SerialMode::ReadWrite, uint baudrate = 9600u);
+    SerialPort(const std::string &portName, int mode = SerialMode::ReadWrite, uint baudrate = 9600u);
+    SerialPort(const std::string &portName, unsigned long mode = SerialMode::ReadWrite, uint baudrate = 9600u);
 
-    void open(const char *portName, int mode);
+    void open();
     void close();
     const char *read();
     void write(const char *data, uint count);
-    std::vector<std::string> queryAvailable();
+    static std::vector<std::string> queryAvailable();
 
 private:
     std::unique_ptr<SerialPortImpl> pImpl = nullptr;
+    std::string name;
 };
