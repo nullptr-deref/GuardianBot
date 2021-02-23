@@ -44,10 +44,9 @@ void clearBuffer(char *buf, const size_t bsize);
 
 int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(3);
+    cli::ArgumentParser argParser(2);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
-    argParser.defineArgument("-c", "--com", true);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -73,12 +72,9 @@ int main(int argc, char **argv)
     const unsigned int BUF_SIZE = 256u;
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
-    char portName[BUF_SIZE] = { 0 };
-    const size_t portNameSize = 12u;
-
-    const char *portNameProv = args["com"].c_str();
-    SerialPort *port = new SerialPort(portNameProv, SerialMode::Write);
-    port->close();
+    SerialPort *connected;
+    const auto serialMode = SerialMode::Write;
+    std::string currentConnectedName;
 
     std::thread interfaceThread([&]
     {
@@ -135,6 +131,8 @@ int main(int argc, char **argv)
         io.Fonts->Build();
         
         ImGui::StyleColorsDark();
+        ImGuiStyle &style = ImGui::GetStyle();
+        style.FrameBorderSize = 1.0f;
 
         ImGui_ImplGlfw_InitForOpenGL(wnd, true);
         ImGui_ImplOpenGL3_Init("#version 430");
@@ -181,22 +179,40 @@ int main(int argc, char **argv)
             ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
             ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
             ImGui::Begin("controller", &controllerShown);
+                ImGui::BeginChild("port", ImVec2(0, 64), true);
+                if (ImGui::BeginMenu("COM ports"))
+                {
+                    const std::vector<std::string> ports = SerialPort::queryAvailable();
+                    for (const auto &port : ports)
+                    {
+                        if (ImGui::MenuItem(port.c_str()))
+                        {
+                            connected = new SerialPort(port.c_str(), SerialMode::Write, serialMode);
+                            currentConnectedName = port;
+                        }
+                    }
+
+                    ImGui::EndMenu();
+                }
+                const std::string connectionLabel = currentConnectedName.size() > 0 ?
+                    "Currently connected to " + currentConnectedName :
+                    "Do not connected to any port now.";
+                ImGui::Text(connectionLabel.c_str());
+                ImGui::EndChild();
+
                 ImGui::InputText("Type a command", arduinoCommandBuf, BUF_SIZE);
                 if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
                 {
-                    port->open(portNameProv, SerialMode::Write);
+                    connected->open();
                     std::clog << "[PORT INFO] Sending: ";
                     for (uint32_t i = 0; i < COMMAND_SIZE; i++) std::clog << arduinoCommandBuf[i];
                     std::clog << '\n';
 
-                    port->write(arduinoCommandBuf, BUF_SIZE);
+                    connected->write(arduinoCommandBuf, BUF_SIZE);
                     std::clog << "Wrote to port successfully.\n";
-                    port->close();
+                    connected->close();
                     clearBuffer(arduinoCommandBuf, BUF_SIZE);
                 }
-            ImGui::End();
-            ImGui::Begin("serial", &serialShown);
-                ImGui::InputText("Serial port name", portName, portNameSize);
             ImGui::End();
             ImGui::EndFrame();
 
@@ -309,7 +325,7 @@ int main(int argc, char **argv)
         isExpired = false;
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
-    port->close();
+    connected->close();
 
     return 0;
 }

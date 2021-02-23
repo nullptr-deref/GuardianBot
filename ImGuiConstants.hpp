@@ -20,7 +20,7 @@ namespace imguic
         const float x = 0;
         const float y = watcher::h + 2;
         const float w = DEFAULT_WIDTH;
-        const float h = 80;
+        const float h = 164;
         const float btnW = 35;
         const float btnH = 20;
     }
