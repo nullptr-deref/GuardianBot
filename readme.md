@@ -42,7 +42,11 @@ Whether librealsense2 or opencv built copies
 were not found.
 Make sure you've built it using
 librealsense2-external and opencv-external targets
-of the projecft first.
+<<<<<<< Updated upstream
+of the project first.
+=======
+of the project first.
+>>>>>>> Stashed changes
 ```
 
 This message appears on the first build and it means
