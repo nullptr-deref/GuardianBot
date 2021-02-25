@@ -11,7 +11,7 @@ namespace gl {
         Shader(GLenum type);
         explicit Shader(GLenum type, const std::string &src);
 
-        static std::string parseFromFile(const std::filesystem::path &filepath);
+        static std::string parseFromFile(const std::string &filepath);
 
         void setSource(const std::string &src);
         bool compile();
