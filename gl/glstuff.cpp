@@ -9,7 +9,7 @@
 #include "Program.hpp"
 
 namespace gl {
-    GLFWwindow * createDefaultWindow() {
+    GLFWwindow * createDefaultWindow(const std::string &windowName) {
         GLFWmonitor *pmonitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *vmode = glfwGetVideoMode(pmonitor);
 
@@ -18,7 +18,7 @@ namespace gl {
         glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
         glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        GLFWwindow *wnd = glfwCreateWindow(vmode->width - 100, vmode->height - 100, "Viewport", nullptr, nullptr);
+        GLFWwindow *wnd = glfwCreateWindow(vmode->width - 100, vmode->height - 100, windowName.c_str(), nullptr, nullptr);
         glfwSetWindowPos(wnd, 100, 100);
 
         return wnd;
@@ -49,13 +49,13 @@ namespace gl {
         }
     }
 
-    Program loadDefaultShaders() {
-        const std::filesystem::path vertfp = std::filesystem::absolute("resources/VertexDefault.shader");
-        Shader vertex(GL_VERTEX_SHADER, Shader::parseFromFile(vertfp));
+    Program loadDefaultShaders(const std::string &vertPath, const std::string &fragPath) {
+        // const std::filesystem::path vertfp = std::filesystem::absolute("resources/VertexDefault.shader");
+        Shader vertex(GL_VERTEX_SHADER, Shader::parseFromFile(vertPath));
         const bool isVertexReady = vertex.compile();
 
-        const std::filesystem::path fragfp = std::filesystem::absolute("resources/FragmentDefault.shader");
-        Shader frag(GL_FRAGMENT_SHADER, Shader::parseFromFile(fragfp));
+        // const std::filesystem::path fragfp = std::filesystem::absolute("resources/FragmentDefault.shader");
+        Shader frag(GL_FRAGMENT_SHADER, Shader::parseFromFile(fragPath));
         const bool isFragReady = frag.compile();
 
         Program p;
