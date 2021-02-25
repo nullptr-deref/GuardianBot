@@ -56,9 +56,10 @@ $ cmake --build . -t opencv-external
 ```
 
 - After this two targets are built, you can build
-the main application:
+the main application (but first regenerate build files):
 ```bash
-$cmake --build . -t GuardianBotApp
+$ cmake .. -D GB_SHARED_GL:BOOL=<your_value>
+$ cmake --build . -t GuardianBotApp
 ```
 
 #### Run
