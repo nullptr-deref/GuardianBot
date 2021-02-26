@@ -15,3 +15,7 @@ target_compile_definitions(dearimgui PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLEW)
 if(NOT ${GB_SHARED_GL})
     target_compile_definitions(dearimgui PRIVATE GLEW_STATIC)
 endif()
+
+if(WIN32)
+    target_compile_options(dearimgui PRIVATE "/MTd")
+endif()
