@@ -41,9 +41,6 @@
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
-const uint32_t COMMAND_SIZE = 16;
-
-
 int main(int argc, char **argv)
 {
     cli::ArgumentParser argParser(4);
@@ -65,6 +62,8 @@ int main(int argc, char **argv)
     std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
     Camera cam;
+
+    std::atomic_bool shouldShutdown = false;
 
     std::mutex frameMutex;
     Image frameToDraw;
@@ -136,7 +135,7 @@ int main(int argc, char **argv)
         io.DisplaySize = { 1.0f, 1.0f };
         io.Fonts->AddFontDefault();
         io.Fonts->Build();
-        
+
         ImGui::StyleColorsDark();
         ImGuiStyle &style = ImGui::GetStyle();
         style.FrameBorderSize = 1.0f;
@@ -168,9 +167,9 @@ int main(int argc, char **argv)
             wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
             ImGui::EndFrame();
 
-            int display_w, display_h;
-            glfwGetFramebufferSize(wnd, &display_w, &display_h);
-            glViewport(0, 0, display_w, display_h);
+            int displayW, displayH;
+            glfwGetFramebufferSize(wnd, &displayW, &displayH);
+            glViewport(0, 0, displayW, displayH);
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -186,6 +185,8 @@ int main(int argc, char **argv)
         glfwDestroyWindow(wnd);
         glfwTerminate();
 
+        shouldShutdown = true;
+
         std::clog << "[THREAD] Interface thread closed.\n";
     });
     interfaceThread.detach();
@@ -195,7 +196,7 @@ int main(int argc, char **argv)
         std::clog << "[THREAD] Created network thread.\n";
         cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(args["prototxt"], args["model"]);
 
-        while (true)
+        while (!shouldShutdown)
         {
             rs2::frame frame;
             if (queue.poll_for_frame(&frame))
@@ -229,7 +230,7 @@ int main(int argc, char **argv)
     const float defaultConfidence = 0.8f;
     std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
-    while (cv::waitKey(1) < 0)
+    while (!shouldShutdown)
     {
         const rs2::frameset fs = cam.waitForFrames();
         queue.enqueue(fs.get_color_frame());

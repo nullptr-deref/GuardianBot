@@ -41,8 +41,11 @@ void SerialPort::open()
 
 void SerialPort::close()
 {
-	bool isClosed = CloseHandle(m_hCom);
-    if (!isClosed) throw std::runtime_error("Could not close the serial port.");
+	if(this != nullptr)
+	{
+		bool isClosed = CloseHandle(m_hCom);
+		if (!isClosed) throw std::runtime_error("Could not close the serial port.");
+	}
 }
 
 void SerialPort::write(const char *data, uint32_t count)
