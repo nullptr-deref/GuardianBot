@@ -25,7 +25,7 @@ namespace gl {
     }
     GLuint Shader::getID() const { return id; }
 
-    std::string Shader::parseFromFile(const std::string &filepath) {
+    std::string Shader::parseFromFile(const std::filesystem::path &filepath) {
         std::ifstream inp(filepath);
         std::string buf;
         std::stringstream ss;

@@ -43,11 +43,9 @@ using StdGuard = std::lock_guard<std::mutex>;
 
 int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(4);
+    cli::ArgumentParser argParser(2);
     argParser.defineArgument("-p", "--prototxt", true);
     argParser.defineArgument("-m", "--model", true);
-    argParser.defineArgument("-v", "--vertex", true);
-    argParser.defineArgument("-f", "--fragment", true);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -127,7 +125,7 @@ int main(int argc, char **argv)
         tex.setAttribute(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         tex.setAttribute(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        const gl::Program prog = gl::loadDefaultShaders(args["vertex"], args["fragment"]);
+        const gl::Program prog = gl::loadDefaultShaders();
         prog.use();
 
         ImGui::CreateContext();
