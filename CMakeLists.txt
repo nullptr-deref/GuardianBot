@@ -104,13 +104,17 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         )
     endif()
 
-    # TODO: copy /resources folder into executable directory
     set(GLFW_DLL_NAME glfw3.dll)
     if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
         set(GLEW_DLL_NAME glew32d.dll)
     else()
         set(GLEW_DLL_NAME glew32.dll)
     endif()
+    message(STATUS "Copying default shaders source code into working directory...")
+    file(COPY
+        ${CMAKE_SOURCE_DIR}/resources/VertexDefault.shader;${CMAKE_SOURCE_DIR}/resources/FragmentDefault.shader
+        DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+    )
     file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 else()
     message(WARNING "Whether librealsense2 or opencv built copies were not found.")
