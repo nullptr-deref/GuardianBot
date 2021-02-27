@@ -14,6 +14,7 @@ namespace vidIO {
         Frame nextFrame() override;
 
     private:
+        rs2::context context;
         rs2::device device;
         rs2::pipeline pipe;
     };

@@ -6,8 +6,8 @@ namespace vidIO {
         if (!adapter->open()) {
             adapter.release();
             adapter = std::make_unique<CVCameraAdapter>();
+            adapter->open();
         }
-        this->open();
     }
     Frame Camera::nextFrame() { return adapter->nextFrame(); }
     bool Camera::open() { return adapter->open(); }

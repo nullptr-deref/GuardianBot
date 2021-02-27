@@ -8,9 +8,8 @@ namespace vidIO {
         return Frame({ vf.get_width(), vf.get_height() }, CV_8UC3, const_cast<void *>(vf.get_data()), cv::Mat::AUTO_STEP);
     }
     bool RSCameraAdapter::open() {
-        rs2::context ctx;
-        rs2::device_list devList = ctx.query_devices();
-        const bool isConnected = devList.size() == 0;
+        rs2::device_list devList = context.query_devices();
+        const bool isConnected = devList.size() > 0;
         if (!isConnected) throw std::runtime_error("No RealSense devices connected.");
         this->device = devList.front();
         this->pipe.start();
