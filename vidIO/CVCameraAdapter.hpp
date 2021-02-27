@@ -10,7 +10,7 @@ namespace vidIO {
     public:
         CVCameraAdapter();
         ~CVCameraAdapter();
-        void open() override;
+        bool open() override;
         void close() override;
         Frame nextFrame() override;
 
