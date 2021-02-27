@@ -47,10 +47,12 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     FindOpenCVModule(dnn)
     FindOpenCVModule(core)
     FindOpenCVModule(imgproc)
-    FindOpenCVModule(highgui)
     FindOpenCVModule(imgcodecs)
+    FindOpenCVModule(videoio)
 
     find_package(OpenGL REQUIRED)
+
+    add_subdirectory(vidIO)
 
     target_include_directories(GuardianBotApp
         PRIVATE
@@ -62,7 +64,6 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
 
         ${CMAKE_SOURCE_DIR}/ImageCompare
         ${CMAKE_SOURCE_DIR}/Serial
-        ${CMAKE_SOURCE_DIR}/events
         ${CMAKE_SOURCE_DIR}
 
         ${DearImGui_INCLUDE_DIRS}
@@ -73,9 +74,10 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         librealsense2
         opencv_core
         opencv_imgproc
-        opencv_highgui
         opencv_dnn
         opencv_imgcodecs
+
+        vidIO
 
         gl
         glew
