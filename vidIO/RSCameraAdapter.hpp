@@ -7,9 +7,9 @@
 namespace vidIO {
     class RSCameraAdapter : public CameraAdapter {
     public:
-        RSCameraAdapter();
+        RSCameraAdapter() = default;
         ~RSCameraAdapter();
-        void open() override;
+        bool open() override;
         void close() override;
         Frame nextFrame() override;
 
