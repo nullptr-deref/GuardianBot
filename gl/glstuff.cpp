@@ -50,11 +50,11 @@ namespace gl {
     }
 
     Program loadDefaultShaders() {
-        const std::filesystem::path vertfp = std::filesystem::path("VertexDefault.shader");
+        const std::filesystem::path vertfp = std::filesystem::path("resources/VertexDefault.shader");
         Shader vertex(GL_VERTEX_SHADER, Shader::parseFromFile(vertfp.string()));
         const bool isVertexReady = vertex.compile();
 
-        const std::filesystem::path fragfp = std::filesystem::path("FragmentDefault.shader");
+        const std::filesystem::path fragfp = std::filesystem::path("resources/FragmentDefault.shader");
         Shader frag(GL_FRAGMENT_SHADER, Shader::parseFromFile(fragfp.string()));
         const bool isFragReady = frag.compile();
 

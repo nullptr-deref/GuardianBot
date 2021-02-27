@@ -115,7 +115,7 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
     message(STATUS "Copying default shaders source code into working directory...")
     file(COPY
         ${CMAKE_SOURCE_DIR}/resources/VertexDefault.shader;${CMAKE_SOURCE_DIR}/resources/FragmentDefault.shader
-        DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}
+        DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/resources
     )
     file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 else()
