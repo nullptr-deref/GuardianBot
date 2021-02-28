@@ -10,7 +10,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <tuple>
+#include <queue>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -26,7 +26,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
-#include "Camera.hpp"
 #include "ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
 #include "gl/glstuff.hpp"
@@ -35,6 +34,8 @@
 #include "gl/Texture.hpp"
 #include "gl/IndexBuffer.hpp"
 #include "gl/Program.hpp"
+
+#include "vidIO/Camera.hpp"
 
 #include "ImGuiWindows.hpp"
 
@@ -59,7 +60,9 @@ int main(int argc, char **argv)
     // This must be placed before Camera ctor call at all costs!
     std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
-    Camera cam;
+    vidIO::Camera cam;
+    std::mutex queueMutex;
+    std::queue<vidIO::Frame> frameQueue;
 
     std::atomic_bool shouldShutdown = false;
 
@@ -67,8 +70,8 @@ int main(int argc, char **argv)
     Image frameToDraw;
     std::atomic_bool isExpired = true;
     
-    const unsigned int CAPACITY = 4;
-    rs2::frame_queue queue(CAPACITY);
+    // const unsigned int CAPACITY = 4;
+    // rs2::frame_queue queue(CAPACITY);
 
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
@@ -196,16 +199,14 @@ int main(int argc, char **argv)
 
         while (!shouldShutdown)
         {
-            rs2::frame frame;
-            if (queue.poll_for_frame(&frame))
+            StdGuard queueGuard(queueMutex);
+            if (!frameQueue.empty())
             {
-                const int fWidth = frame.as<rs2::video_frame>().get_width();
-                const int fHeight = frame.as<rs2::video_frame>().get_height();
-                
-                const Image im({ fWidth, fHeight }, CV_8UC3, const_cast<void *>(frame.get_data()), cv::Mat::AUTO_STEP);
+                const vidIO::Frame f = frameQueue.front();
+                frameQueue.pop();
 
                 const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
-                const cv::Mat blob = cv::dnn::blobFromImage(im, 1.0f, cv::Size(300, 300), mean, false, false);
+                const cv::Mat blob = cv::dnn::blobFromImage(f, 1.0f, cv::Size(300, 300), mean, false, false);
                 nnet.setInput(blob);
                 const cv::Mat detection = nnet.forward();
 
@@ -230,12 +231,11 @@ int main(int argc, char **argv)
     std::clog << "[THREAD] Entering main thread loop.\n";
     while (!shouldShutdown)
     {
-        const rs2::frameset fs = cam.waitForFrames();
-        queue.enqueue(fs.get_color_frame());
+        const vidIO::Frame frame = cam.nextFrame();
+        StdGuard queueGuard(queueMutex);
+        frameQueue.push(frame);
 
-        const rs2::video_frame frame = fs.get_color_frame();
-        const Image cvFrame = Image({ frame.get_width(), frame.get_height() }, CV_8UC3, const_cast<void *>(frame.get_data()), cv::Mat::AUTO_STEP);
-        if (cvFrame.dims > 2 || cvFrame.dims < 2) continue;
+        if (frame.dims > 2 || frame.dims < 2) continue;
 
         std::lock_guard<std::mutex> detectionsGuard(detectionsMutex);
         if (!detectionsQueue.empty())
@@ -250,10 +250,10 @@ int main(int argc, char **argv)
 
                 if (confidence >= defaultConfidence)
                 {
-                    const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * cvFrame.cols);
-                    const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * cvFrame.rows);
-                    const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * cvFrame.cols);
-                    const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * cvFrame.rows);
+                    const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * frame.cols);
+                    const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * frame.rows);
+                    const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * frame.cols);
+                    const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * frame.rows);
 
                     faceRects.emplace_back
                     (
@@ -269,10 +269,10 @@ int main(int argc, char **argv)
 
         const cv::Scalar borderColor = { 0, 0, 255 };
         const unsigned int borderThickness = 4u;
-        for (const cv::Rect &r : faceRects) cv::rectangle(cvFrame, r, borderColor, borderThickness);
+        for (const cv::Rect &r : faceRects) cv::rectangle(frame, r, borderColor, borderThickness);
 
         StdGuard g(frameMutex);
-        frameToDraw = cvFrame;
+        frameToDraw = frame;
         isExpired = false;
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
