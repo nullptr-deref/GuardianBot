@@ -4,3 +4,4 @@ build
 *.png
 *.ini
 .vs
+dumps
