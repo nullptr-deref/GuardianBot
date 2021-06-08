@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <queue>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -27,6 +28,8 @@
 
 #include "gl/gl.hpp"
 
+#include "vidIO/Camera.hpp"
+
 #include "ImGuiWindows.hpp"
 
 using Image = cv::Mat;
@@ -45,6 +48,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    // WARNING!!!
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
