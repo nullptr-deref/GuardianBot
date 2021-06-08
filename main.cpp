@@ -4,13 +4,9 @@
 #endif
 
 #include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <sstream>
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <queue>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -28,14 +24,8 @@
 
 #include "ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
-#include "gl/glstuff.hpp"
-#include "gl/VertexBuffer.hpp"
-#include "gl/VertexArray.hpp"
-#include "gl/Texture.hpp"
-#include "gl/IndexBuffer.hpp"
-#include "gl/Program.hpp"
 
-#include "vidIO/Camera.hpp"
+#include "gl/gl.hpp"
 
 #include "ImGuiWindows.hpp"
 
@@ -45,8 +35,8 @@ using StdGuard = std::lock_guard<std::mutex>;
 int main(int argc, char **argv)
 {
     cli::ArgumentParser argParser(2);
-    argParser.defineArgument("-p", "--prototxt", true);
-    argParser.defineArgument("-m", "--model", true);
+    argParser.arg("-p", "--prototxt", true);
+    argParser.arg("-m", "--model", true);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -123,10 +113,10 @@ int main(int argc, char **argv)
         };
         gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
         gl::Texture tex(GL_TEXTURE_2D);
-        tex.setAttribute(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        tex.setAttribute(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        tex.setAttribute(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        tex.setAttribute(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        tex.setAttr(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        tex.setAttr(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        tex.setAttr(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        tex.setAttr(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         const gl::Program prog = gl::loadDefaultShaders();
         prog.use();

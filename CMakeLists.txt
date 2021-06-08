@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
@@ -30,9 +30,10 @@ if(EXISTS ${OPENCV_INCLUDE_ROOT})
     set(OPENCV_BUILT TRUE CACHE BOOL "Represents wether opencv external project is built or not" FORCE)
 endif()
 
-if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
+if( ${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT} )
     add_subdirectory(Serial)
     add_subdirectory(gl)
+    add_subdirectory(yamler)
 
     include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
     
@@ -91,16 +92,16 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         ${OPENCV_DEPS}
     )
 
-    if (NOT ${GB_SHARED_GL})
+    if ( NOT ${GB_SHARED_GL} )
         target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
     endif()
 
     set_target_properties(GuardianBotApp PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
     )
 
-    if(WIN32)
+    if( WIN32 )
         target_compile_options(GuardianBotApp
             PRIVATE "/MTd"
         )
@@ -117,7 +118,9 @@ if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
         ${CMAKE_SOURCE_DIR}/resources/VertexDefault.shader;${CMAKE_SOURCE_DIR}/resources/FragmentDefault.shader
         DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/resources
     )
-    file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+    if ( GB_SHARED_GL )
+        file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
+    endif()
 else()
     message(WARNING "Whether librealsense2 or opencv built copies were not found.")
     message(WARNING "Make sure you've built it using librealsense2-external and opencv-external targets of the project first.")
