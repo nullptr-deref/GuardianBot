@@ -46,7 +46,7 @@ of the project first.
 ```
 
 This message appears on the first build and it means
-thst you have no local copy of librealsense SDK or
+that you have no local copy of librealsense SDK or
 suitable OpenCV version installed. You have to type
 2 commands after that:
 
