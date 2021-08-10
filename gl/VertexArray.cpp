@@ -15,7 +15,7 @@ namespace gl {
     void VertexArray::setLayout(const VertexArrayLayout &l) {
         ptrdiff_t pointer = 0;
         for (auto [index, count, type, norm] : l.attributes) {
-            glVertexAttribPointer(index, count, type, norm, l.stride, (const void *)pointer);
+            glVertexAttribPointer(index, count, type, static_cast<bool>(norm), l.stride, (const void *)pointer);
             pointer += count * retrieveTypeSize(type);
             this->enableAttribute(index);
         }

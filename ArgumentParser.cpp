@@ -2,19 +2,19 @@
 
 #include <iostream>
 
-void cli::ArgumentParser::arg(const std::string &shortName, const std::string &fullName, bool required)
+void cli::ArgumentParser::arg(const std::string &shortName, const std::string &fullName, Requirement required)
 {
     const std::string shortNameTrimmed = shortName[0] == '-' ? shortName.substr(1) : shortName;
     const std::string fullNameTrimmed = fullName.substr(0, 2) == "--" ? fullName.substr(2) : fullName;
 
-    if (required)
+    if (static_cast<bool>(required))
     {
         m_args[m_reqArgc++] = { shortNameTrimmed, fullNameTrimmed };
     }
     else m_notReqArgs.push_back({ shortNameTrimmed, fullNameTrimmed });
 }
 
-auto cli::ArgumentParser::parseArgs(int argc, const char **argv) -> Map<std::string, std::string>
+auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, std::string>
 {
     Map<std::string, std::string> parsedArgs;
 

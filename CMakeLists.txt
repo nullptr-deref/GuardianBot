@@ -33,7 +33,6 @@ endif()
 if( ${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT} )
     add_subdirectory(Serial)
     add_subdirectory(gl)
-    add_subdirectory(yamler)
 
     include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
     

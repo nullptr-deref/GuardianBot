@@ -37,9 +37,10 @@ using StdGuard = std::lock_guard<std::mutex>;
 
 int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(2);
-    argParser.arg("-p", "--prototxt", true);
-    argParser.arg("-m", "--model", true);
+    const size_t c_argCount = 2;
+    cli::ArgumentParser argParser(c_argCount);
+    argParser.arg("-p", "--prototxt", cli::Requirement::Required);
+    argParser.arg("-m", "--model", cli::Requirement::Required);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -105,8 +106,8 @@ int main(int argc, char **argv)
         gl::VertexBuffer vb(verticesData, VERTICES_COUNT * 4, GL_STATIC_DRAW);
         gl::VertexArray va;
         gl::VertexArrayLayout layout;
-        layout.addAttribute(2, GL_FLOAT, true);
-        layout.addAttribute(2, GL_FLOAT, true);
+        layout.addAttribute(2, GL_FLOAT, gl::Normalization::Normalized);
+        layout.addAttribute(2, GL_FLOAT, gl::Normalization::Normalized);
         va.setLayout(layout);
 
         const unsigned int ELEMENTS_COUNT = 6;

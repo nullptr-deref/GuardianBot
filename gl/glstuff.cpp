@@ -24,7 +24,12 @@ namespace gl {
         return wnd;
     }
 
-    void loadCVmat2GLTexture(const Texture &tex, cv::Mat& image, bool shouldFlip)
+    enum class Flip : bool
+    {
+        Yes = true,
+        No = false
+    };
+    void loadCVmat2GLTexture(const Texture &tex, cv::Mat& image, Flip shouldFlip)
     {
         if(image.empty()) std::cerr << "Image is empty.\n";
         else
@@ -32,7 +37,9 @@ namespace gl {
             tex.bind();
 
             cv::Mat processed;
-            if (shouldFlip) cv::flip(image, processed, 0);
+            const int verticalFlipCode = 0;
+            if (static_cast<bool>(shouldFlip))
+                cv::flip(image, processed, verticalFlipCode);
             else image.copyTo(processed);
             
             glTexImage2D(tex.getType(),
