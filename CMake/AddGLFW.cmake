@@ -24,32 +24,38 @@ ExternalProject_Add(
         -DGLFW_BUILD_DOCS=OFF
         -DGLFW_INSTALL=ON
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DUSE_MSVC_RUNTIME_LIBRARY_DLL=OFF
+        -DUSE_MSVC_RUNTIME_LIBRARY_DLL=TRUE
 )
 
 ExternalProject_Get_Property(glfw-external INSTALL_DIR)
 set(GLFW_INSTALL_DIR ${INSTALL_DIR})
 set(GLFW_LIB_DIR "${GLFW_INSTALL_DIR}/lib")
 
-if(${GB_SHARED_GL})
-    find_library(glfw_imp NAMES glfw3dll PATHS ${GLFW_LIB_DIR} NO_DEFAULT_PATH)
-
-    add_library(glfw SHARED IMPORTED)
-    set_target_properties(glfw PROPERTIES
-        IMPORTED_IMPLIB ${glfw_imp}
-        IMPORTED_CONFIGURATIONS "Debug;Release"
-    )
-    set(glfw_DLL_DIR ${GLFW_INSTALL_DIR}/bin)
+if( EXISTS ${GLFW_INSTALL_DIR})
+    set( GLFW_BUILT TRUE )
 else()
-    find_library(glfw_lib NAMES glfw3 PATHS ${GLFW_LIB_DIR} NO_DEFAULT_PATH)
-    
-    add_library(glfw STATIC IMPORTED)
-    set_target_properties(glfw PROPERTIES
-        IMPORTED_LOCATION_DEBUG ${glfw_lib}
-        IMPORTED_LOCATION ${glfw_lib}
-        IMPORTED_IMPLIB ${glfw_imp}
-        IMPORTED_CONFIGURATIONS "Debug;Release"
-    )
+    set( GLFW_BUILT FALSE )
 endif()
 
+if( ${GLFW_BUILT} )
+    if(${GB_SHARED_GL})
+        find_library(glfw_imp NAMES glfw3dll PATHS ${GLFW_LIB_DIR} NO_DEFAULT_PATH)
+    
+        add_library(glfw SHARED IMPORTED)
+        set_target_properties(glfw PROPERTIES
+            IMPORTED_IMPLIB ${glfw_imp}
+            IMPORTED_CONFIGURATIONS "Debug;Release"
+        )
+        set(glfw_DLL_DIR ${GLFW_INSTALL_DIR}/bin)
+    else()
+        find_library(glfw_lib NAMES glfw3 PATHS ${GLFW_LIB_DIR} NO_DEFAULT_PATH)
+        
+        add_library(glfw STATIC IMPORTED)
+        set_target_properties(glfw PROPERTIES
+            IMPORTED_LOCATION_DEBUG ${glfw_lib}
+            IMPORTED_LOCATION ${glfw_lib}
+            IMPORTED_CONFIGURATIONS "Debug;Release"
+        )
+    endif()
+endif()
 set(glfw_INCLUDE_DIRS ${GLFW_INSTALL_DIR}/include)
