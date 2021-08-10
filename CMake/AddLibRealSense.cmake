@@ -2,6 +2,8 @@ include(ExternalProject)
 
 project(librealsense2 LANGUAGES C CXX)
 
+message( STATUS "=== Setting up librealsense2 projects ===" )
+
 ExternalProject_Add(
     librealsense2-external
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/3rd-party/librealsense2
@@ -49,3 +51,5 @@ set_target_properties(librealsense2 PROPERTIES
 )
 target_link_libraries(librealsense2 INTERFACE realsense-file)
 set(librealsense2_INCLUDE_DIRS ${LIBREALSENSE2_INSTALL_DIR}/include)
+
+message ( STATUS "=== Finished setup of librealsense2 ===" )
