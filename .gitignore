@@ -5,3 +5,5 @@ build
 *.ini
 .vs
 dumps
+CMakeSettings.json
+tags
