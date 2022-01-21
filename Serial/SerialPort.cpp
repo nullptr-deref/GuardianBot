@@ -65,14 +65,15 @@ const char* SerialPort::read()
 	return buf;
 }
 
+using PortName = std::string;
 std::vector<std::string> SerialPort::queryAvailable()
 {
-	std::vector<std::string> availablePorts;
+	std::vector<PortName> availablePorts;
 	const size_t BUF_LENGTH = 1024u;
 	char *buf = new char[BUF_LENGTH];
 	for (size_t i = 0; i < 256; i++)
 	{
-		const std::string portName = "COM" + std::to_string(i);
+		const PortName portName = "COM" + std::to_string(i);
 		DWORD res = QueryDosDevice(portName.c_str(), buf, BUF_LENGTH);
 		if (res > 0) availablePorts.push_back(portName);
 	}
