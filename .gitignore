@@ -5,3 +5,5 @@ build
 *.ini
 .vs
 dumps
+tags
+.vimrc
