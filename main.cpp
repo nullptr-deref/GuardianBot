@@ -35,7 +35,7 @@
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) try
 {
     cli::ArgumentParser argParser(2);
     argParser.arg("-p", "--prototxt", true);
@@ -273,4 +273,7 @@ int main(int argc, char **argv)
     connected->close();
 
     return 0;
+} catch (const std::exception *e) {
+    std::cerr << e.what() << '\n';
+    std::terminate();
 }

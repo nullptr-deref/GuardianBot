@@ -26,8 +26,8 @@ set(GLEW_INSTALL_DIR ${INSTALL_DIR})
 set(GLEW_LIB_DIR "${GLEW_INSTALL_DIR}/lib")
 
 if(${GB_SHARED_GL})
-    find_library(glew_imp_Debug NAMES glew32d PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
-    find_library(glew_imp_Release NAMES glew32 PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(glew_imp_Debug NAMES libglew32d PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(glew_imp_Release NAMES libglew32 PATHS ${GLEW_LIB_DIR} NO_DEFAULT_PATH)
 
     add_library(glew SHARED IMPORTED)
     set_target_properties(glew PROPERTIES

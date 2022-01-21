@@ -14,7 +14,7 @@ void cli::ArgumentParser::arg(const std::string &shortName, const std::string &f
     else m_notReqArgs.push_back({ shortNameTrimmed, fullNameTrimmed });
 }
 
-auto cli::ArgumentParser::parseArgs(int argc, const char **argv) -> Map<std::string, std::string>
+auto cli::ArgumentParser::parseArgs(int argc, char **argv) -> Map<std::string, std::string>
 {
     Map<std::string, std::string> parsedArgs;
 
