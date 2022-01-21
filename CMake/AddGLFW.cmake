@@ -47,7 +47,6 @@ else()
     set_target_properties(glfw PROPERTIES
         IMPORTED_LOCATION_DEBUG ${glfw_lib}
         IMPORTED_LOCATION ${glfw_lib}
-        IMPORTED_IMPLIB ${glfw_imp}
         IMPORTED_CONFIGURATIONS "Debug;Release"
     )
 endif()

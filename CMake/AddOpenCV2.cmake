@@ -14,7 +14,7 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/opencv/opencv
     GIT_TAG 4.5.0
     GIT_SHALLOW ON
-    GIT_PROGRESS OFF
+    GIT_PROGRESS ON
     BUILD_ALWAYS OFF
 
     CMAKE_ARGS
