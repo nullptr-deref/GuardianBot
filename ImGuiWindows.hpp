@@ -41,7 +41,7 @@ namespace wnd {
                 {
                     if (ImGui::MenuItem(iport.c_str()))
                     {
-                        port = std::make_unique<SerialPort>(iport, SerialMode::Write, SerialMode::Read);
+                        port = std::make_unique<SerialPort>(iport, SerialMode::ReadWrite);
                         currentlyConnectedPort = iport;
                     }
                 }

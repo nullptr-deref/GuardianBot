@@ -21,7 +21,7 @@ namespace cli
 
         void arg(const std::string &shortName, const std::string &fullName, bool required = true);
 
-        auto parseArgs(int argc, const char **argv) -> Map<std::string, std::string>;
+        auto parseArgs(int argc, char **argv) -> Map<std::string, std::string>;
 
     private:
         struct ArgumentMeta
