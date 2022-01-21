@@ -7,3 +7,4 @@ build
 dumps
 tags
 .vimrc
+CMakeSettings.json
