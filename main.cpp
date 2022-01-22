@@ -35,19 +35,19 @@
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
-int main(int argc, char **argv) try
+int main(int argc, char **argv)
 {
-    cli::ArgumentParser argParser(2);
-    argParser.arg("-p", "--prototxt", true);
-    argParser.arg("-m", "--model", true);
-    Map<std::string, std::string> args;
-    try { args = argParser.parseArgs(argc, argv); }
-    catch(const std::runtime_error &e)
-    {
-        std::cerr << e.what() << '\n';
-        return 0;
+    cli::ArgumentParser ap;
+    cli::ArgMap am;
+    try {
+        ap.arg(cli::ArgType::String, { .fullName = "prototxt", .shortName = "p" });
+        ap.arg(cli::ArgType::String, { .fullName = "model", .shortName = "m" });
+        am = ap.parse(argc, argv);
     }
-
+    catch (const cli::BasicException &e) {
+        std::cerr << e.what() << '\n';
+        std::exit(-1);
+    }
     // WARNING!!!
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
@@ -189,7 +189,7 @@ int main(int argc, char **argv) try
     std::thread netThread([&]
     {
         std::clog << "[THREAD] Created network thread.\n";
-        cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(args["prototxt"], args["model"]);
+        cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
 
         while (!shouldShutdown)
         {
@@ -273,7 +273,4 @@ int main(int argc, char **argv) try
     connected->close();
 
     return 0;
-} catch (const std::exception &e) {
-    std::cerr << e.what() << '\n';
-    std::terminate();
 }
