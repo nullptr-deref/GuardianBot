@@ -5,19 +5,15 @@ template <typename T>
 class Array
 {
 public:
+    size_t size = 0;
+
     Array() = delete;
-    explicit Array(size_t s) : size(s)
-    {
-        m_data = new T[size];
-    }
+    explicit Array(size_t s) : size(s) { m_data = new T[size]; }
 
     explicit Array(T *dat, size_t s) : size(s)
     {
         m_data = new T[size];
-        for (unsigned int i = 0; i < size; i++)
-        {
-            m_data[i] = dat[i];
-        }
+        for (size_t i = 0; i < size; i++) m_data[i] = dat[i];
     }
 
     Array(const Array &other)
@@ -25,10 +21,7 @@ public:
         this->size = other.size;
         this->m_data = new T[size];
 
-        for (unsigned int i = 0; i < size; i++)
-        {
-            m_data[i] = other[i];
-        }
+        for (size_t i = 0; i < size; i++) m_data[i] = other[i];
     }
 
     T &operator[](size_t index)
@@ -56,7 +49,7 @@ public:
         this->size = other.size;
         this->m_data = new T[size];
 
-        for (unsigned int i = 0; i < size; i++) m_data[i] = other[i];
+        for (size_t i = 0; i < size; i++) m_data[i] = other[i];
 
         return *this;
     }
@@ -66,8 +59,6 @@ public:
         delete[] m_data;
         m_data = nullptr;
     }
-
-    size_t size = 0;
     
     template <typename U>
     class ArrayIterator
@@ -76,19 +67,21 @@ public:
         size_t m_size;
         U *m_data;
     public:
-        explicit ArrayIterator(size_t idx, U *data, size_t cSize) : m_idx(idx), m_data(data), m_size(cSize) {}
+        using difference_type = size_t;
+        using value_type = U;
+        using pointer = const U *;
+        using reference = const U &;
+        using iterator_category = std::random_access_iterator_tag;
+
+        explicit ArrayIterator(size_t idx, U *data, size_t cSize)
+        : m_idx(idx), m_data(data), m_size(cSize) {}
+        
         ArrayIterator &operator++() { m_idx = m_idx >= m_size ? m_size : m_idx + 1; return *this; }
         ArrayIterator &operator--() { m_idx = m_idx <= 0 ? 0 : m_idx - 1; return *this; }
         
         bool operator==(ArrayIterator &other) { return m_idx == other.m_idx; }
         bool operator!=(ArrayIterator &other) { return !(m_idx == other.m_idx); }
-        U operator*() { return m_data[m_idx]; }
-    
-        using difference_type = size_t;
-        using value_type = U;
-        using pointer = const U*;
-        using reference = const U&;
-        using iterator_category = std::random_access_iterator_tag;
+        U &operator*() { return m_data[m_idx]; }
     };
 
     ArrayIterator<T> begin() { return ArrayIterator<T>(0, m_data, size); }

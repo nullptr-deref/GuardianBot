@@ -8,12 +8,11 @@ add_library(vidIO STATIC
     CVCameraAdapter.cpp
 )
 
-target_include_directories(vidIO PRIVATE ${opencv2_INCLUDE_DIRS} ${librealsense2_INCLUDE_DIRS})
+target_include_directories(vidIO PRIVATE ${opencv_INCLUDE_DIRS} ${realsense2_INCLUDE_DIRS})
 
 target_link_libraries(vidIO
-    opencv_videoio
-    opencv_imgproc
-    librealsense2
+    opencv::opencv
+    realsense2::realsense2
 )
 
 if(WIN32)

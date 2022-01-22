@@ -4,9 +4,6 @@
 #endif
 
 #include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <sstream>
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -28,12 +25,8 @@
 
 #include "ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
-#include "gl/glstuff.hpp"
-#include "gl/VertexBuffer.hpp"
-#include "gl/VertexArray.hpp"
-#include "gl/Texture.hpp"
-#include "gl/IndexBuffer.hpp"
-#include "gl/Program.hpp"
+
+#include "gl/gl.hpp"
 
 #include "vidIO/Camera.hpp"
 
@@ -42,11 +35,11 @@
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) try
 {
     cli::ArgumentParser argParser(2);
-    argParser.defineArgument("-p", "--prototxt", true);
-    argParser.defineArgument("-m", "--model", true);
+    argParser.arg("-p", "--prototxt", true);
+    argParser.arg("-m", "--model", true);
     Map<std::string, std::string> args;
     try { args = argParser.parseArgs(argc, argv); }
     catch(const std::runtime_error &e)
@@ -55,6 +48,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    // WARNING!!!
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
@@ -123,10 +117,10 @@ int main(int argc, char **argv)
         };
         gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
         gl::Texture tex(GL_TEXTURE_2D);
-        tex.setAttribute(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        tex.setAttribute(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        tex.setAttribute(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        tex.setAttribute(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        tex.setAttr(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        tex.setAttr(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        tex.setAttr(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        tex.setAttr(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         const gl::Program prog = gl::loadDefaultShaders();
         prog.use();
@@ -279,4 +273,7 @@ int main(int argc, char **argv)
     connected->close();
 
     return 0;
+} catch (const std::exception &e) {
+    std::cerr << e.what() << '\n';
+    std::terminate();
 }

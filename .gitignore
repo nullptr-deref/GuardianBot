@@ -4,3 +4,8 @@ build
 *.png
 *.ini
 .vs
+dumps
+tags
+.vimrc
+CMakeSettings.json
+backends

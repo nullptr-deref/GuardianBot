@@ -2,8 +2,8 @@
 
 ### What for?
 
-Guardian Bot is a research project which is aimed to
-research computer vision integration into robotic and
+Guardian Bot is a research project aimed to
+investigate computer vision integration into robotic and
 semi-automated systems. Hope you will enjoy looking
 through this project or find something new or useful!
 
@@ -26,41 +26,23 @@ support for another cameras in future versions.
 #### Build
 
 Then, the build itself:
-- First, do standard CMake setup:
+- First of all, you should have Conan package manager installed on your machine so the project's
+dependencies can be built. If you doesn't have it, visit [conan's official website](conan.io) and
+install it.
+
+- If you have conan installed on your computer, then run the following commands:
 ```bash
-$ mkdir build && cd build
-$ cmake .. -D GB_SHARED_GL:BOOL=<TRUE|FALSE>
-```
-The `GB_SHARED_GL` determines whether OpenGL stuff
-should be built as static or dynamic libraries.
-
-- After CMake finishes build files generation, you
-will see a warning message:
-
-```
-Whether librealsense2 or opencv built copies
-were not found.
-Make sure you've built it using
-librealsense2-external and opencv-external targets
-of the project first.
+$ mkdir build
+$ cd build
+$ conan install .. --build=missing
 ```
 
-This message appears on the first build and it means
-thst you have no local copy of librealsense SDK or
-suitable OpenCV version installed. You have to type
-2 commands after that:
+P.S. For now it is highly recommended to use Visual Studio 16 toolchain because I did not experimented
+with other toolchains and I really care about Windows and Linux support for now, so I definetely
+will test current build system with gcc toolchain (but not right now).
 
-```bash
-$ cmake --build . -t librealsense2-external
-$ cmake --build . -t opencv-external
-```
-
-- After this two targets are built, you can build
-the main application (but first regenerate build files):
-```bash
-$ cmake .. -D GB_SHARED_GL:BOOL=<your_value>
-$ cmake --build . -t GuardianBotApp
-```
+- After all dependencies were built and installed, then run standard CMake configuration sequence:
+run `cmake ..` under build directory and `cmake --build .` after configuration is complete.
 
 #### Run
 
@@ -79,9 +61,8 @@ model.
 used to provide path to Caffee model file itself.
 
 Both files are placed in the repository's root
-directory. Of course, you can use your own but
-consequences are unknown to me, it's your field for
-researches.:)
+directory and you can use them as a default configuration.
+Of course, you can use your own but consequences are unknown to me, it's your field for researches.:)
 
 Congratulations! You've successfully started my
 little application, feel free to explore and upgrade

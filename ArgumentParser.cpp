@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-void cli::ArgumentParser::defineArgument(const std::string &shortName, const std::string &fullName, bool required)
+void cli::ArgumentParser::arg(const std::string &shortName, const std::string &fullName, bool required)
 {
     const std::string shortNameTrimmed = shortName[0] == '-' ? shortName.substr(1) : shortName;
     const std::string fullNameTrimmed = fullName.substr(0, 2) == "--" ? fullName.substr(2) : fullName;

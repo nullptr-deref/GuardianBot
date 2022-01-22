@@ -1,124 +1,79 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
     set(CMAKE_BUILD_TYPE "Debug")
-endif()
+endif( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 
-include(${CMAKE_SOURCE_DIR}/CMake/AddLibRealSense.cmake)
-include(${CMAKE_SOURCE_DIR}/CMake/AddOpenCV2.cmake)
-include(${CMAKE_SOURCE_DIR}/CMake/OpenCVDepsToTargets.cmake)
+project("GuardianBot")
 
-include(${CMAKE_SOURCE_DIR}/CMake/AddGLFW.cmake)
-include(${CMAKE_SOURCE_DIR}/CMake/AddGlew.cmake)
+include("${CMAKE_BINARY_DIR}/conan_paths.cmake")
+find_package(OpenGL REQUIRED)
+find_package(realsense2 2.49.0 EXACT REQUIRED)
+find_package(opencv 4.5.0 EXACT REQUIRED)
+find_package(glfw3 3.3.2 EXACT REQUIRED)
+find_package(GLEW 2.2.0 EXACT REQUIRED)
+find_package(imgui 1.80 REQUIRED)
 
-project(GuardianBot LANGUAGES C CXX)
+add_subdirectory("vidIO")
+add_subdirectory("Serial")
+add_subdirectory("gl")
 
-set(LIBREALSENSE_BUILT FALSE CACHE BOOL "Represents whether librealsense external project is built or not")
-set(OPENCV_BUILT FALSE CACHE BOOL "Represents whether opencv external project is built or not")
+add_executable(GuardianBotApp
+    "main.cpp"
+    "ArgumentParser.cpp"
+    "Camera.cpp"
+    "backends/imgui_impl_glfw.cpp"
+    "backends/imgui_impl_opengl3.cpp"
+    "backends/imgui_impl_glfw.h"
+    "backends/imgui_impl_opengl3.h"
+)
 
-set(LIBREALSENSE_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/librealsense2/install/include")
-set(OPENCV_INCLUDE_ROOT "${CMAKE_BINARY_DIR}/3rd-party/opencv/install/include")
+target_compile_definitions(GuardianBotApp PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
+target_include_directories(GuardianBotApp
+    PRIVATE
+    ${imgui_INCLUDE_DIRS}
+    ${realsense2_INCLUDE_DIRS}
+    ${glfw_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
+    ${OpenGL_INCLUDE_DIRS}
 
-option(GB_SHARED_GL "Whether project should use static or shared OpenGL dependencies" TRUE)
+    ${CMAKE_SOURCE_DIR}/Serial
+    ${CMAKE_SOURCE_DIR}
+)
 
-if(EXISTS ${LIBREALSENSE_INCLUDE_ROOT})
-    unset(LIBREALSENSE_BUILT CACHE)
-    set(LIBREALSENSE_BUILT TRUE CACHE BOOL "Represents whether librealsense external project is built or not" FORCE)
-endif()
-if(EXISTS ${OPENCV_INCLUDE_ROOT})
-    unset(OPENCV_BUILT CACHE)
-    set(OPENCV_BUILT TRUE CACHE BOOL "Represents wether opencv external project is built or not" FORCE)
-endif()
+target_link_libraries(GuardianBotApp
+    PRIVATE
+    realsense2::realsense2
+    opencv::opencv
+    glfw::glfw
+    GLEW::GLEW
+    vidIO
+    Serial
+    imgui::imgui
 
-if(${LIBREALSENSE_BUILT} AND ${OPENCV_BUILT})
-    add_subdirectory(Serial)
-    add_subdirectory(gl)
+    gl
+    OpenGL::GL
+)
 
-    include(${CMAKE_SOURCE_DIR}/CMake/BuildDearImGui.cmake)
-    
-    add_executable(GuardianBotApp
-        main.cpp
-        ArgumentParser.cpp
-        Camera.cpp
+set_target_properties(GuardianBotApp PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)
+
+if( WIN32 )
+    target_compile_options(GuardianBotApp
+        PRIVATE "/MTd"
     )
+endif( WIN32 )
 
-    OpenCVDepsToTargets(${OPENCV_LIBS_PATH})
-
-    FindOpenCVModule(dnn)
-    FindOpenCVModule(core)
-    FindOpenCVModule(imgproc)
-    FindOpenCVModule(imgcodecs)
-    FindOpenCVModule(videoio)
-
-    find_package(OpenGL REQUIRED)
-
-    add_subdirectory(vidIO)
-
-    target_include_directories(GuardianBotApp
-        PRIVATE
-        ${librealsense2_INCLUDE_DIRS}
-        ${opencv2_INCLUDE_DIRS}
-        ${glew_INCLUDE_DIRS}
-        ${glfw_INCLUDE_DIRS}
-        ${OpenGL_INCLUDE_DIRS}
-
-        ${CMAKE_SOURCE_DIR}/ImageCompare
-        ${CMAKE_SOURCE_DIR}/Serial
-        ${CMAKE_SOURCE_DIR}
-
-        ${DearImGui_INCLUDE_DIRS}
-    )
-
-    target_link_libraries(GuardianBotApp
-        PRIVATE
-        librealsense2
-        opencv_core
-        opencv_imgproc
-        opencv_dnn
-        opencv_imgcodecs
-
-        vidIO
-
-        gl
-        glew
-        glfw
-        OpenGL::GL
-
-        dearimgui
-
-        Serial
-
-        ${OPENCV_DEPS}
-    )
-
-    if (NOT ${GB_SHARED_GL})
-        target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
-    endif()
-
-    set_target_properties(GuardianBotApp PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED ON
-    )
-
-    if(WIN32)
-        target_compile_options(GuardianBotApp
-            PRIVATE "/MTd"
-        )
-    endif()
-
-    set(GLFW_DLL_NAME glfw3.dll)
-    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-        set(GLEW_DLL_NAME glew32d.dll)
-    else()
-        set(GLEW_DLL_NAME glew32.dll)
-    endif()
-    message(STATUS "Copying default shaders source code into working directory...")
-    file(COPY
-        ${CMAKE_SOURCE_DIR}/resources/VertexDefault.shader;${CMAKE_SOURCE_DIR}/resources/FragmentDefault.shader
-        DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/resources
-    )
-    file(COPY ${glew_DLL_DIR}/${GLEW_DLL_NAME};${glfw_DLL_DIR}/${GLFW_DLL_NAME} DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE})
-else()
-    message(WARNING "Whether librealsense2 or opencv built copies were not found.")
-    message(WARNING "Make sure you've built it using librealsense2-external and opencv-external targets of the project first.")
-endif()
+message(STATUS "Copying default shaders source code into working directory...")
+file(COPY
+    ${CMAKE_SOURCE_DIR}/resources/VertexDefault.shader;
+    ${CMAKE_SOURCE_DIR}/resources/FragmentDefault.shader
+    DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/resources
+)
+file(INSTALL
+    "${CMAKE_BINARY_DIR}/bin/"
+    DESTINATION ${CMAKE_BUILD_TYPE}
+    FILES_MATCHING PATTERN "*.dll"
+)

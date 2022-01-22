@@ -5,11 +5,11 @@
 #include <sstream>
 
 namespace gl {
-    Shader::Shader(GLenum type) {
-        id = glCreateShader(type);
+    Shader::Shader(ShaderType type) {
+        id = glCreateShader(static_cast<GLenum>(type));
     }
-    Shader::Shader(GLenum type, const std::string &src) {
-        id = glCreateShader(type);
+    Shader::Shader(ShaderType type, const std::string &src) {
+        id = glCreateShader(static_cast<GLenum>(type));
         this->setSource(src);
     }
     void Shader::setSource(const std::string &src) {
@@ -23,7 +23,7 @@ namespace gl {
 
         return static_cast<bool>(res);
     }
-    GLuint Shader::getID() const { return id; }
+    gl::ShaderID Shader::getID() const { return id; }
 
     std::string Shader::parseFromFile(const std::filesystem::path &filepath) {
         std::ifstream inp(filepath);

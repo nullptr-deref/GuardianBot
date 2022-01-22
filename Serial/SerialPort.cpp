@@ -2,15 +2,12 @@
 
 #include <stdexcept>
 
-SerialPort::SerialPort(const std::string &portName, int mode, uint32_t baudrate)
-: name(portName), mode(mode), baudrate(baudrate) {}
-
-SerialPort::SerialPort(const std::string &portName, unsigned long mode, uint32_t baudrate)
+SerialPort::SerialPort(const std::string &portName, SerialMode mode, uint32_t baudrate)
 : name(portName), mode(mode), baudrate(baudrate) {}
 
 void SerialPort::open()
 {
-	m_hCom = CreateFileA(name.c_str(), mode, false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);
+	m_hCom = CreateFileA(name.c_str(), static_cast<unsigned long>(mode), false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);
 
 	if (INVALID_HANDLE_VALUE == m_hCom) throw std::runtime_error("Cannot connect to serial port [" + name + ']');
 
@@ -55,24 +52,27 @@ void SerialPort::write(const char *data, uint32_t count)
 	if (!isWritten) throw std::runtime_error("Could not write to serial port.");
 }
 
-const char* SerialPort::read()
-{
-	char buf[64];
-	DWORD bytesRead = 0;
-	const bool isRead = ReadFile(m_hCom, buf, 64, &bytesRead, nullptr);
-	if (!isRead) throw std::runtime_error("Could not read from the serial port.");
 
-	return buf;
+SerialReadData SerialPort::read()
+{
+    SerialReadData readData;
+    DWORD bytesRead = 0;
+    const bool isRead = ReadFile(m_hCom, readData.data, MAX_DATA_SIZE, &bytesRead, nullptr);
+    if (!isRead) throw std::runtime_error("Could not read from the serial port.");
+    readData.actualSize = static_cast<size_t>(bytesRead);
+
+    return readData;
 }
 
 std::vector<std::string> SerialPort::queryAvailable()
 {
-	std::vector<std::string> availablePorts;
+        using PortName = std::string;
+	std::vector<PortName> availablePorts;
 	const size_t BUF_LENGTH = 1024u;
 	char *buf = new char[BUF_LENGTH];
 	for (size_t i = 0; i < 256; i++)
 	{
-		const std::string portName = "COM" + std::to_string(i);
+		const PortName portName = "COM" + std::to_string(i);
 		DWORD res = QueryDosDevice(portName.c_str(), buf, BUF_LENGTH);
 		if (res > 0) availablePorts.push_back(portName);
 	}

@@ -19,7 +19,7 @@ namespace cli
     public:
         explicit ArgumentParser(size_t argc) : m_args(argc) {}
 
-        void defineArgument(const std::string &shortName, const std::string &fullName, bool required = true);
+        void arg(const std::string &shortName, const std::string &fullName, bool required = true);
 
         auto parseArgs(int argc, char **argv) -> Map<std::string, std::string>;
 

@@ -17,7 +17,7 @@ namespace gl {
         }
         
         template <typename Attr>
-        void setAttribute(GLenum attr, Attr val) {
+        void setAttr(GLenum attr, Attr val) {
             if constexpr (meta::IsSame<Attr, int>()) glTexParameteri(type, attr, val);
         }
 
