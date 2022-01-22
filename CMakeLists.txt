@@ -6,8 +6,6 @@ endif( "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 
 project("GuardianBot")
 
-option(GB_SHARED_GL "Whether project should use static or shared OpenGL dependencies" TRUE)
-
 include("${CMAKE_BINARY_DIR}/conan_paths.cmake")
 find_package(OpenGL REQUIRED)
 find_package(realsense2 2.49.0 EXACT REQUIRED)
@@ -56,10 +54,6 @@ target_link_libraries(GuardianBotApp
     gl
     OpenGL::GL
 )
-
-if ( NOT ${GB_SHARED_GL} )
-    target_compile_definitions(GuardianBotApp PRIVATE GLEW_STATIC)
-endif()
 
 set_target_properties(GuardianBotApp PROPERTIES
     CXX_STANDARD 20
