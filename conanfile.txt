@@ -1,0 +1,27 @@
+[requires]
+opencv/4.5.0
+librealsense/2.49.0
+imgui/1.80
+glfw/3.3.2
+glew/2.2.0
+
+[generators]
+cmake_find_package
+cmake_paths
+cmake
+
+[options]
+librealsense:tools=False
+librealsense:shared=True
+opencv:shared=True
+opencv:parallel=openmp
+glfw:shared=True
+glew:shared=True
+imgui:shared=True
+
+[imports]
+bin, *.dll -> ./bin
+res/bindings, imgui_impl_glfw.cpp -> ../backends
+res/bindings, imgui_impl_opengl3.cpp -> ../backends
+res/bindings, imgui_impl_glfw.h -> ../backends
+res/bindings, imgui_impl_opengl3.h -> ../backends

@@ -13,13 +13,13 @@ add_library(gl STATIC
 find_package(OpenGL REQUIRED)
 
 target_include_directories(gl PRIVATE
-    ${glew_INCLUDE_DIRS}
+    ${GLEW_INCLUDE_DIRS}
     ${glfw_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
-    ${opencv2_INCLUDE_DIRS}
+    ${opencv_INCLUDE_DIRS}
 )
 
-target_link_libraries(gl glfw glew OpenGL::GL)
+target_link_libraries(gl glfw::glfw GLEW::GLEW OpenGL::GL)
 set_target_properties(gl PROPERTIES
     CXX_STANDARD_REQUIRED TRUE
     CXX_STANDARD 17
