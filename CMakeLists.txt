@@ -17,6 +17,7 @@ find_package(imgui 1.80 REQUIRED)
 add_subdirectory("vidIO")
 add_subdirectory("Serial")
 add_subdirectory("gl")
+add_subdirectory("cli")
 
 add_executable(GuardianBotApp
     "main.cpp"
@@ -46,9 +47,10 @@ target_link_libraries(GuardianBotApp
     opencv::opencv
     glfw::glfw
     GLEW::GLEW
+    imgui::imgui
+    cli
     vidIO
     Serial
-    imgui::imgui
 
     gl
     OpenGL::GL

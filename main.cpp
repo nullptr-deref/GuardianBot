@@ -23,7 +23,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
-#include "ArgumentParser.hpp"
+#include "cli/ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
 
 #include "gl/gl.hpp"
