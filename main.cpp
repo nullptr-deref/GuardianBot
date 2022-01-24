@@ -9,6 +9,16 @@
 #include <memory>
 #include <queue>
 
+#ifdef PROFILING
+#define BUILD_WITH_EASY_PROFILER
+#include <easy/profiler.h>
+#define PROFILER_CALL(x) x
+#define PROFC(x) PROFILER_CALL(x)
+#else
+#define PROFILER_CALL(x)
+#define PROFC(x) PROFILER_CALL(x)
+#endif
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -34,6 +44,10 @@ using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
 int main(int argc, char **argv) {
+    PROFC(EASY_PROFILER_ENABLE);
+    PROFC(EASY_MAIN_THREAD);
+
+    PROFC(EASY_BLOCK("Parsing arguments"));
     cli::ArgumentParser ap;
     cli::ArgMap am;
     try {
@@ -45,13 +59,16 @@ int main(int argc, char **argv) {
         std::cerr << e.what() << '\n';
         std::exit(-1);
     }
+    PROFC(EASY_END_BLOCK);
     // WARNING!!!
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
     std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
+    PROFC(EASY_BLOCK("Camera constructor call"));
     vidIO::Camera cam;
+    PROFC(EASY_END_BLOCK);
     std::mutex queueMutex;
     std::queue<vidIO::Frame> frameQueue;
 
@@ -73,7 +90,7 @@ int main(int argc, char **argv) {
 
     std::thread interfaceThread([&]
     {
-        std::clog << "[THREAD] Interface thread created.\n";
+        std::clog << "[THREAD] Render thread created.\n";
 
         if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
 
@@ -137,12 +154,16 @@ int main(int argc, char **argv) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             {
+                PROFC(EASY_BLOCK("Mutex lock in render thread", profiler::colors::Red));
                 StdGuard g(frameMutex);
+                PROFC(EASY_END_BLOCK);
+                PROFC(EASY_BLOCK("Loading image into texture memory"));
                 if (!isExpired.load())
                 {
                     gl::loadCVmat2GLTexture(tex, frameToDraw, true);
                     isExpired = true;
                 }
+                PROFC(EASY_END_BLOCK);
             }
             tex.bind();
 
@@ -176,29 +197,38 @@ int main(int argc, char **argv) {
 
         shouldShutdown = true;
 
-        std::clog << "[THREAD] Interface thread closed.\n";
+        std::clog << "[THREAD] Render thread closed.\n";
     });
     interfaceThread.detach();
 
     std::thread netThread([&]
     {
         std::clog << "[THREAD] Created network thread.\n";
+        PROFC(EASY_BLOCK("Reading model from file"));
         cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
+        PROFC(EASY_END_BLOCK);
 
         while (!shouldShutdown)
         {
+            PROFC(EASY_BLOCK("Queue mutex lock in net thread", profiler::colors::Red));
             StdGuard queueGuard(queueMutex);
+            PROFC(EASY_END_BLOCK);
             if (!frameQueue.empty())
             {
+                PROFC(EASY_BLOCK("Reading next frame from queue"));
                 const vidIO::Frame f = frameQueue.front();
                 frameQueue.pop();
 
+                PROFC(EASY_BLOCK("Detection", profiler::colors::Blue));
                 const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
                 const cv::Mat blob = cv::dnn::blobFromImage(f, 1.0f, cv::Size(300, 300), mean, false, false);
                 nnet.setInput(blob);
                 const cv::Mat detection = nnet.forward();
+                PROFC(EASY_END_BLOCK);
 
+                PROFC(EASY_BLOCK("Detections mutex lock in net thread", profiler::colors::Red));
                 std::lock_guard<std::mutex> detectionsWriteGuard(detectionsMutex);
+                PROFC(EASY_END_BLOCK);
                 // As far as I understood, cv::Mat::size represents:
                 // size[0] - mat rows
                 // size[1] - mat columns
@@ -217,15 +247,22 @@ int main(int argc, char **argv) {
     const float defaultConfidence = 0.8f;
     std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
+    PROFC(EASY_BLOCK("Detections rendering"));
     while (!shouldShutdown)
     {
+        PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
+        PROFC(EASY_END_BLOCK);
+        PROFC(EASY_BLOCK("Queue mutex lock in main thread", profiler::colors::Red));
         StdGuard queueGuard(queueMutex);
+        PROFC(EASY_END_BLOCK);
         frameQueue.push(frame);
 
         if (frame.dims > 2 || frame.dims < 2) continue;
 
+        PROFC(EASY_BLOCK("Detectins mutex lock in main thread", profiler::colors::Red));
         std::lock_guard<std::mutex> detectionsGuard(detectionsMutex);
+        PROFC(EASY_END_BLOCK);
         if (!detectionsQueue.empty())
         {
             while (!faceRects.empty()) faceRects.pop_back();
@@ -259,12 +296,16 @@ int main(int argc, char **argv) {
         const unsigned int borderThickness = 4u;
         for (const cv::Rect &r : faceRects) cv::rectangle(frame, r, borderColor, borderThickness);
 
+        PROFC(EASY_BLOCK("Frame mutex lock in main thread", profiler::colors::Red));
         StdGuard g(frameMutex);
+        PROFC(EASY_END_BLOCK);
         frameToDraw = frame;
         isExpired = false;
     }
+    PROFC(EASY_END_BLOCK);
     std::clog << "[THREAD] Main thread loop destroyed.\n";
     connected->close();
 
+    PROFC(profiler::dumpBlocksToFile("C:/dev/GuardianBot/dumps/test.prof"));
     return 0;
 }
