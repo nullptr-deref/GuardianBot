@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "CVCameraAdapter.hpp"
-#include "RSCameraAdapter.hpp"
 
 namespace vidIO {
     class Camera {

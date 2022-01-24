@@ -17,8 +17,6 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include <librealsense2/rs.hpp>
-
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
@@ -35,8 +33,7 @@
 using Image = cv::Mat;
 using StdGuard = std::lock_guard<std::mutex>;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     cli::ArgumentParser ap;
     cli::ArgMap am;
     try {
@@ -64,9 +61,6 @@ int main(int argc, char **argv)
     Image frameToDraw;
     std::atomic_bool isExpired = true;
     
-    // const unsigned int CAPACITY = 4;
-    // rs2::frame_queue queue(CAPACITY);
-
     std::vector<cv::Mat> detectionsQueue;
     std::mutex detectionsMutex;
 

@@ -21,7 +21,6 @@ add_subdirectory("cli")
 
 add_executable(GuardianBotApp
     "main.cpp"
-    "Camera.cpp"
     "backends/imgui_impl_glfw.cpp"
     "backends/imgui_impl_opengl3.cpp"
     "backends/imgui_impl_glfw.h"

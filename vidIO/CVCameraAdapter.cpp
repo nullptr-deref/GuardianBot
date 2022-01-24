@@ -10,7 +10,8 @@ namespace vidIO {
     void CVCameraAdapter::close() { if (cap.isOpened()) cap.release(); }
     Frame CVCameraAdapter::nextFrame() {
         cv::Mat frame;
-        cap.read(frame);
+        if (!cap.read(frame))
+            throw std::runtime_error("Device could not read frame.");
 
         return frame;
     }
