@@ -65,7 +65,7 @@ namespace wnd {
                 }
                 std::clog << '\n';
 
-                port->write(commandBuf, bufSize);
+                port->write(commandBuf, static_cast<uint32_t>(bufSize));
                 std::clog << "Wrote to port successfully.\n";
                 port->close();
                 clearBuffer(commandBuf, bufSize);

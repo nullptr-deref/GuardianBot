@@ -28,6 +28,8 @@ namespace cli {
 
         template <typename ExtractedType>
         auto get() -> ExtractedType {
+            static_assert(std::is_same<ExtractedType, std::string>() ||
+                    std::is_arithmetic<ExtractedType>(), "Argument cannot be converted to the specified type.");
             switch(this->type_) {
                 case ArgType::String:
                     if constexpr (std::is_same<ExtractedType, std::string>())
@@ -47,6 +49,8 @@ namespace cli {
                     if constexpr (std::is_integral<ExtractedType>())
                         return true;
             }
+
+            return raw_;
         }
     private:
         ArgType type_;
