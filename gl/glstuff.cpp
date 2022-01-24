@@ -24,16 +24,17 @@ namespace gl {
         return wnd;
     }
 
-    void loadCVmat2GLTexture(const Texture &tex, cv::Mat& image, bool shouldFlip)
+    void loadCVmat2GLTexture(const Texture &tex, const cv::Mat& image, bool shouldFlip)
     {
-        if(image.empty()) std::cerr << "Image is empty.\n";
+        const cv::Mat copied = image.clone();
+        if(copied.empty()) std::cerr << "Image is empty.\n";
         else
         {
             tex.bind();
 
             cv::Mat processed;
-            if (shouldFlip) cv::flip(image, processed, 0);
-            else image.copyTo(processed);
+            if (shouldFlip) cv::flip(copied, processed, 0);
+            else copied.copyTo(processed);
             
             glTexImage2D(tex.getType(),
                         0,

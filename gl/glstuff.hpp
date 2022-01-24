@@ -12,7 +12,7 @@
 namespace gl {
     class Texture;
     GLFWwindow * createDefaultWindow(const std::string &windowName);
-    void loadCVmat2GLTexture(const Texture &texture, cv::Mat &image, bool shouldFlip = false);
+    void loadCVmat2GLTexture(const Texture &texture, const cv::Mat &image, bool shouldFlip = false);
     Program loadDefaultShaders();
     GLuint retrieveTypeSize(GLenum type);
 }
