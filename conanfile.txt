@@ -1,6 +1,5 @@
 [requires]
 opencv/4.5.0
-librealsense/2.49.0
 imgui/1.80
 glfw/3.3.2
 glew/2.2.0
@@ -12,8 +11,6 @@ cmake_paths
 cmake
 
 [options]
-librealsense:tools=False
-librealsense:shared=True
 opencv:shared=True
 opencv:parallel=openmp
 glfw:shared=True
