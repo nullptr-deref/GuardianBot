@@ -13,22 +13,22 @@ find_package(opencv 4.5.0 EXACT REQUIRED)
 find_package(glfw3 3.3.2 EXACT REQUIRED)
 find_package(GLEW 2.2.0 EXACT REQUIRED)
 find_package(imgui 1.80 REQUIRED)
+find_package(easy_profiler 2.1.0 EXACT REQUIRED)
 
 add_subdirectory("vidIO")
 add_subdirectory("Serial")
 add_subdirectory("gl")
+add_subdirectory("cli")
 
 add_executable(GuardianBotApp
     "main.cpp"
-    "ArgumentParser.cpp"
-    "Camera.cpp"
     "backends/imgui_impl_glfw.cpp"
     "backends/imgui_impl_opengl3.cpp"
     "backends/imgui_impl_glfw.h"
     "backends/imgui_impl_opengl3.h"
 )
 
-target_compile_definitions(GuardianBotApp PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
+target_compile_definitions(GuardianBotApp PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW PROFILING)
 target_include_directories(GuardianBotApp
     PRIVATE
     ${imgui_INCLUDE_DIRS}
@@ -36,6 +36,7 @@ target_include_directories(GuardianBotApp
     ${glfw_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
     ${OpenGL_INCLUDE_DIRS}
+    ${easy_profiler_INCLUDE_DIRS}
 
     ${CMAKE_SOURCE_DIR}/Serial
     ${CMAKE_SOURCE_DIR}
@@ -47,9 +48,11 @@ target_link_libraries(GuardianBotApp
     opencv::opencv
     glfw::glfw
     GLEW::GLEW
+    imgui::imgui
+    easy_profiler
+    cli
     vidIO
     Serial
-    imgui::imgui
 
     gl
     OpenGL::GL

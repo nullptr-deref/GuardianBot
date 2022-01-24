@@ -4,6 +4,7 @@ librealsense/2.49.0
 imgui/1.80
 glfw/3.3.2
 glew/2.2.0
+easy_profiler/2.1.0
 
 [generators]
 cmake_find_package
@@ -18,6 +19,7 @@ opencv:parallel=openmp
 glfw:shared=True
 glew:shared=True
 imgui:shared=True
+easy_profiler:shared=True
 
 [imports]
 bin, *.dll -> ./bin

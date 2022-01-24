@@ -5,9 +5,18 @@
 
 #include <iostream>
 #include <thread>
-#include <mutex>
 #include <memory>
 #include <queue>
+
+#ifdef PROFILING
+#define BUILD_WITH_EASY_PROFILER
+#include <easy/profiler.h>
+#define PROFILER_CALL(x) x
+#define PROFC(x) PROFILER_CALL(x)
+#else
+#define PROFILER_CALL(x)
+#define PROFC(x) PROFILER_CALL(x)
+#endif
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -17,13 +26,11 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include <librealsense2/rs.hpp>
-
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
-#include "ArgumentParser.hpp"
+#include "cli/ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
 
 #include "gl/gl.hpp"
@@ -33,42 +40,40 @@
 #include "ImGuiWindows.hpp"
 
 using Image = cv::Mat;
-using StdGuard = std::lock_guard<std::mutex>;
 
-int main(int argc, char **argv) try
-{
-    cli::ArgumentParser argParser(2);
-    argParser.arg("-p", "--prototxt", true);
-    argParser.arg("-m", "--model", true);
-    Map<std::string, std::string> args;
-    try { args = argParser.parseArgs(argc, argv); }
-    catch(const std::runtime_error &e)
-    {
-        std::cerr << e.what() << '\n';
-        return 0;
+int main(int argc, char **argv) {
+    PROFC(EASY_PROFILER_ENABLE);
+    PROFC(EASY_MAIN_THREAD);
+
+    PROFC(EASY_BLOCK("Parsing arguments"));
+    cli::ArgumentParser ap;
+    cli::ArgMap am;
+    try {
+        ap.arg(cli::ArgType::String, { .fullName = "prototxt", .shortName = "p" });
+        ap.arg(cli::ArgType::String, { .fullName = "model", .shortName = "m" });
+        am = ap.parse(argc, argv);
     }
-
+    catch (const cli::BasicException &e) {
+        std::cerr << e.what() << '\n';
+        std::exit(-1);
+    }
+    PROFC(EASY_END_BLOCK);
     // WARNING!!!
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
     std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
+    PROFC(EASY_BLOCK("Camera constructor call"));
     vidIO::Camera cam;
-    std::mutex queueMutex;
+    PROFC(EASY_END_BLOCK);
     std::queue<vidIO::Frame> frameQueue;
+    std::vector<cv::Rect> faceRects;
+    std::vector<cv::Rect> rectsBackup;
+    const cv::Scalar borderColor = { 0, 0, 255 };
+    const unsigned int borderThickness = 4u;
 
     std::atomic_bool shouldShutdown = false;
-
-    std::mutex frameMutex;
-    Image frameToDraw;
-    std::atomic_bool isExpired = true;
-    
-    // const unsigned int CAPACITY = 4;
-    // rs2::frame_queue queue(CAPACITY);
-
-    std::vector<cv::Mat> detectionsQueue;
-    std::mutex detectionsMutex;
 
     std::atomic_size_t humansWatched = 0;
 
@@ -79,7 +84,7 @@ int main(int argc, char **argv) try
 
     std::thread interfaceThread([&]
     {
-        std::clog << "[THREAD] Interface thread created.\n";
+        std::clog << "[THREAD] Render thread created.\n";
 
         if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
 
@@ -142,14 +147,22 @@ int main(int argc, char **argv) try
         {
             glClear(GL_COLOR_BUFFER_BIT);
 
-            {
-                StdGuard g(frameMutex);
-                if (!isExpired.load())
-                {
-                    gl::loadCVmat2GLTexture(tex, frameToDraw, true);
-                    isExpired = true;
+            PROFC(EASY_BLOCK("Loading image into texture memory"));
+            if (!frameQueue.empty()) {
+                const vidIO::Frame &f = frameQueue.front();
+                if (!faceRects.empty()) {
+                    for (const cv::Rect &r : faceRects)
+                        cv::rectangle(f, r, borderColor, borderThickness);
+                    rectsBackup = faceRects;
                 }
+                else {
+                    for (const cv::Rect &r : rectsBackup)
+                        cv::rectangle(f, r, borderColor, borderThickness);
+                }
+                gl::loadCVmat2GLTexture(tex, f, true);
+                frameQueue.pop();
             }
+            PROFC(EASY_END_BLOCK);
             tex.bind();
 
             glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
@@ -182,29 +195,31 @@ int main(int argc, char **argv) try
 
         shouldShutdown = true;
 
-        std::clog << "[THREAD] Interface thread closed.\n";
+        std::clog << "[THREAD] Render thread closed.\n";
     });
     interfaceThread.detach();
 
     std::thread netThread([&]
     {
         std::clog << "[THREAD] Created network thread.\n";
-        cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(args["prototxt"], args["model"]);
+        PROFC(EASY_BLOCK("Reading model from file"));
+        cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
+        PROFC(EASY_END_BLOCK);
 
+        const float defaultConfidence = 0.8f;
         while (!shouldShutdown)
         {
-            StdGuard queueGuard(queueMutex);
-            if (!frameQueue.empty())
-            {
-                const vidIO::Frame f = frameQueue.front();
-                frameQueue.pop();
+            if (!frameQueue.empty()) {
+                PROFC(EASY_BLOCK("Reading next frame from queue"));
+                const vidIO::Frame &f = frameQueue.front();
 
+                PROFC(EASY_BLOCK("Detection", profiler::colors::Blue));
                 const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
                 const cv::Mat blob = cv::dnn::blobFromImage(f, 1.0f, cv::Size(300, 300), mean, false, false);
                 nnet.setInput(blob);
                 const cv::Mat detection = nnet.forward();
+                PROFC(EASY_END_BLOCK);
 
-                std::lock_guard<std::mutex> detectionsWriteGuard(detectionsMutex);
                 // As far as I understood, cv::Mat::size represents:
                 // size[0] - mat rows
                 // size[1] - mat columns
@@ -213,67 +228,45 @@ int main(int argc, char **argv) try
                 // produced by cv::Net)
                 
                 const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
-                detectionsQueue.push_back(detections);
+                if (!faceRects.empty()) faceRects.clear();
+
+                for (int i = 0; i < detections.rows; i++) {
+                    const float confidence = detections.at<float>(i, 2);
+
+                    if (confidence >= defaultConfidence) {
+                        const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * f.cols);
+                        const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * f.rows);
+                        const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * f.cols);
+                        const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * f.rows);
+
+                        faceRects.emplace_back
+                        (
+                            xLeftBottom,
+                            yLeftBottom,
+                            xRightTop - xLeftBottom,
+                            yRightTop - yLeftBottom
+                        );
+                    }
+                }
+                humansWatched = faceRects.size();
+
             }
         }
         std::clog << "[THREAD] Network thread destroyed.\n";
     });
     netThread.detach();
 
-    const float defaultConfidence = 0.8f;
-    std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
     while (!shouldShutdown)
     {
+        PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
-        StdGuard queueGuard(queueMutex);
         frameQueue.push(frame);
-
-        if (frame.dims > 2 || frame.dims < 2) continue;
-
-        std::lock_guard<std::mutex> detectionsGuard(detectionsMutex);
-        if (!detectionsQueue.empty())
-        {
-            while (!faceRects.empty()) faceRects.pop_back();
-
-            const cv::Mat detections = detectionsQueue.back();
-            detectionsQueue.pop_back();
-            for (int i = 0; i < detections.rows; i++)
-            {
-                const float confidence = detections.at<float>(i, 2);
-
-                if (confidence >= defaultConfidence)
-                {
-                    const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * frame.cols);
-                    const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * frame.rows);
-                    const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * frame.cols);
-                    const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * frame.rows);
-
-                    faceRects.emplace_back
-                    (
-                        xLeftBottom,
-                        yLeftBottom,
-                        xRightTop - xLeftBottom,
-                        yRightTop - yLeftBottom
-                    );
-                }
-            }
-        }
-        humansWatched = faceRects.size();
-
-        const cv::Scalar borderColor = { 0, 0, 255 };
-        const unsigned int borderThickness = 4u;
-        for (const cv::Rect &r : faceRects) cv::rectangle(frame, r, borderColor, borderThickness);
-
-        StdGuard g(frameMutex);
-        frameToDraw = frame;
-        isExpired = false;
+        PROFC(EASY_END_BLOCK);
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
     connected->close();
 
+    PROFC(profiler::dumpBlocksToFile("C:/dev/GuardianBot/dumps/test.prof"));
     return 0;
-} catch (const std::exception &e) {
-    std::cerr << e.what() << '\n';
-    std::terminate();
 }

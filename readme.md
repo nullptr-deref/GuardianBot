@@ -17,11 +17,18 @@ support. It provides UI which shows the output of
 neural network facial recognition and also provides
 serial port communication interface.
 
+### Development notes
+
+For a couple of months further my aim is to rewrite this
+project to make it able to use different cameras, not only
+RealSense devices (simply because I'm currently have no
+access to device I used to have).
+
 ### Build and run
 
 First of all, current version of the application works
-only with Intel RealSense camera. There will be
-support for another cameras in future versions.
+only with Intel RealSense camera. Support for different
+cameras will be delivered in future releases, stay tuned.
 
 #### Build
 
@@ -38,8 +45,8 @@ $ conan install .. --build=missing
 ```
 
 P.S. For now it is highly recommended to use Visual Studio 16 toolchain because I did not experimented
-with other toolchains and I really care about Windows and Linux support for now, so I definetely
-will test current build system with gcc toolchain (but not right now).
+with other toolchains and currently I'm really caring about Windows and Linux support so I'll definetely
+test current build system with gcc toolchain (but not right now).
 
 - After all dependencies were built and installed, then run standard CMake configuration sequence:
 run `cmake ..` under build directory and `cmake --build .` after configuration is complete.
