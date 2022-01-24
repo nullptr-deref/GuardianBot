@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <thread>
-#include <mutex>
 #include <memory>
 #include <queue>
 
@@ -41,7 +40,6 @@
 #include "ImGuiWindows.hpp"
 
 using Image = cv::Mat;
-using StdGuard = std::lock_guard<std::mutex>;
 
 int main(int argc, char **argv) {
     PROFC(EASY_PROFILER_ENABLE);
@@ -69,17 +67,13 @@ int main(int argc, char **argv) {
     PROFC(EASY_BLOCK("Camera constructor call"));
     vidIO::Camera cam;
     PROFC(EASY_END_BLOCK);
-    std::mutex queueMutex;
     std::queue<vidIO::Frame> frameQueue;
+    std::vector<cv::Rect> faceRects;
+    std::vector<cv::Rect> rectsBackup;
+    const cv::Scalar borderColor = { 0, 0, 255 };
+    const unsigned int borderThickness = 4u;
 
     std::atomic_bool shouldShutdown = false;
-
-    std::mutex frameMutex;
-    Image frameToDraw;
-    std::atomic_bool isExpired = true;
-    
-    std::vector<cv::Mat> detectionsQueue;
-    std::mutex detectionsMutex;
 
     std::atomic_size_t humansWatched = 0;
 
@@ -153,18 +147,22 @@ int main(int argc, char **argv) {
         {
             glClear(GL_COLOR_BUFFER_BIT);
 
-            {
-                PROFC(EASY_BLOCK("Mutex lock in render thread", profiler::colors::Red));
-                StdGuard g(frameMutex);
-                PROFC(EASY_END_BLOCK);
-                PROFC(EASY_BLOCK("Loading image into texture memory"));
-                if (!isExpired.load())
-                {
-                    gl::loadCVmat2GLTexture(tex, frameToDraw, true);
-                    isExpired = true;
+            PROFC(EASY_BLOCK("Loading image into texture memory"));
+            if (!frameQueue.empty()) {
+                const vidIO::Frame &f = frameQueue.front();
+                if (!faceRects.empty()) {
+                    for (const cv::Rect &r : faceRects)
+                        cv::rectangle(f, r, borderColor, borderThickness);
+                    rectsBackup = faceRects;
                 }
-                PROFC(EASY_END_BLOCK);
+                else {
+                    for (const cv::Rect &r : rectsBackup)
+                        cv::rectangle(f, r, borderColor, borderThickness);
+                }
+                gl::loadCVmat2GLTexture(tex, f, true);
+                frameQueue.pop();
             }
+            PROFC(EASY_END_BLOCK);
             tex.bind();
 
             glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
@@ -208,16 +206,12 @@ int main(int argc, char **argv) {
         cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
         PROFC(EASY_END_BLOCK);
 
+        const float defaultConfidence = 0.8f;
         while (!shouldShutdown)
         {
-            PROFC(EASY_BLOCK("Queue mutex lock in net thread", profiler::colors::Red));
-            StdGuard queueGuard(queueMutex);
-            PROFC(EASY_END_BLOCK);
-            if (!frameQueue.empty())
-            {
+            if (!frameQueue.empty()) {
                 PROFC(EASY_BLOCK("Reading next frame from queue"));
-                const vidIO::Frame f = frameQueue.front();
-                frameQueue.pop();
+                const vidIO::Frame &f = frameQueue.front();
 
                 PROFC(EASY_BLOCK("Detection", profiler::colors::Blue));
                 const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
@@ -226,9 +220,6 @@ int main(int argc, char **argv) {
                 const cv::Mat detection = nnet.forward();
                 PROFC(EASY_END_BLOCK);
 
-                PROFC(EASY_BLOCK("Detections mutex lock in net thread", profiler::colors::Red));
-                std::lock_guard<std::mutex> detectionsWriteGuard(detectionsMutex);
-                PROFC(EASY_END_BLOCK);
                 // As far as I understood, cv::Mat::size represents:
                 // size[0] - mat rows
                 // size[1] - mat columns
@@ -237,72 +228,42 @@ int main(int argc, char **argv) {
                 // produced by cv::Net)
                 
                 const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
-                detectionsQueue.push_back(detections);
+                if (!faceRects.empty()) faceRects.clear();
+
+                for (int i = 0; i < detections.rows; i++) {
+                    const float confidence = detections.at<float>(i, 2);
+
+                    if (confidence >= defaultConfidence) {
+                        const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * f.cols);
+                        const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * f.rows);
+                        const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * f.cols);
+                        const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * f.rows);
+
+                        faceRects.emplace_back
+                        (
+                            xLeftBottom,
+                            yLeftBottom,
+                            xRightTop - xLeftBottom,
+                            yRightTop - yLeftBottom
+                        );
+                    }
+                }
+                humansWatched = faceRects.size();
+
             }
         }
         std::clog << "[THREAD] Network thread destroyed.\n";
     });
     netThread.detach();
 
-    const float defaultConfidence = 0.8f;
-    std::vector<cv::Rect> faceRects;
     std::clog << "[THREAD] Entering main thread loop.\n";
-    PROFC(EASY_BLOCK("Detections rendering"));
     while (!shouldShutdown)
     {
         PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
-        PROFC(EASY_END_BLOCK);
-        PROFC(EASY_BLOCK("Queue mutex lock in main thread", profiler::colors::Red));
-        StdGuard queueGuard(queueMutex);
-        PROFC(EASY_END_BLOCK);
         frameQueue.push(frame);
-
-        if (frame.dims > 2 || frame.dims < 2) continue;
-
-        PROFC(EASY_BLOCK("Detectins mutex lock in main thread", profiler::colors::Red));
-        std::lock_guard<std::mutex> detectionsGuard(detectionsMutex);
         PROFC(EASY_END_BLOCK);
-        if (!detectionsQueue.empty())
-        {
-            while (!faceRects.empty()) faceRects.pop_back();
-
-            const cv::Mat detections = detectionsQueue.back();
-            detectionsQueue.pop_back();
-            for (int i = 0; i < detections.rows; i++)
-            {
-                const float confidence = detections.at<float>(i, 2);
-
-                if (confidence >= defaultConfidence)
-                {
-                    const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * frame.cols);
-                    const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * frame.rows);
-                    const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * frame.cols);
-                    const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * frame.rows);
-
-                    faceRects.emplace_back
-                    (
-                        xLeftBottom,
-                        yLeftBottom,
-                        xRightTop - xLeftBottom,
-                        yRightTop - yLeftBottom
-                    );
-                }
-            }
-        }
-        humansWatched = faceRects.size();
-
-        const cv::Scalar borderColor = { 0, 0, 255 };
-        const unsigned int borderThickness = 4u;
-        for (const cv::Rect &r : faceRects) cv::rectangle(frame, r, borderColor, borderThickness);
-
-        PROFC(EASY_BLOCK("Frame mutex lock in main thread", profiler::colors::Red));
-        StdGuard g(frameMutex);
-        PROFC(EASY_END_BLOCK);
-        frameToDraw = frame;
-        isExpired = false;
     }
-    PROFC(EASY_END_BLOCK);
     std::clog << "[THREAD] Main thread loop destroyed.\n";
     connected->close();
 
