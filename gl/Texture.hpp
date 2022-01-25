@@ -1,8 +1,9 @@
 #pragma once
 
+#include <type_traits>
+
 #include <GL/glew.h>
 
-#include "meta.hpp"
 
 namespace gl {
     class Texture {
@@ -18,7 +19,7 @@ namespace gl {
         
         template <typename Attr>
         void setAttr(GLenum attr, Attr val) {
-            if constexpr (meta::IsSame<Attr, int>()) glTexParameteri(type, attr, val);
+            if constexpr (std::is_same<Attr, int>()) glTexParameteri(type, attr, val);
         }
 
         GLenum getType() const { return type; }
