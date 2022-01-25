@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 namespace gl {
     Shader::Shader(ShaderType type) {
@@ -30,7 +31,13 @@ namespace gl {
         std::string buf;
         std::stringstream ss;
 
-        while(std::getline(inp, buf)) ss << buf << '\n';
+        if (inp.good()) {
+            std::clog << "Found shader file '" << filepath.string() << "'\n";
+            while(std::getline(inp, buf)) ss << buf << '\n';
+        }
+        else {
+            throw std::runtime_error("'" + filepath.string() + "': no such file of directory.");
+        }
 
         return ss.str();
     }
