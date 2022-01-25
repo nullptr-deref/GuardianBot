@@ -127,71 +127,78 @@ int main(int argc, char **argv) {
         tex.setAttr(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         tex.setAttr(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        const gl::Program prog = gl::loadDefaultShaders();
-        prog.use();
+        try {
+            const gl::Program prog = gl::loadDefaultShaders();
+            prog.use();
 
-        ImGui::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
-        io.DisplaySize = { 1.0f, 1.0f };
-        io.Fonts->AddFontDefault();
-        io.Fonts->Build();
+            ImGui::CreateContext();
+            ImGuiIO &io = ImGui::GetIO();
+            io.DisplaySize = { 1.0f, 1.0f };
+            io.Fonts->AddFontDefault();
+            io.Fonts->Build();
 
-        ImGui::StyleColorsDark();
-        ImGuiStyle &style = ImGui::GetStyle();
-        style.FrameBorderSize = 1.0f;
+            ImGui::StyleColorsDark();
+            ImGuiStyle &style = ImGui::GetStyle();
+            style.FrameBorderSize = 1.0f;
 
-        ImGui_ImplGlfw_InitForOpenGL(wnd, true);
-        ImGui_ImplOpenGL3_Init("#version 430");
+            ImGui_ImplGlfw_InitForOpenGL(wnd, true);
+            ImGui_ImplOpenGL3_Init("#version 430");
 
-        while (!glfwWindowShouldClose(wnd))
-        {
-            glClear(GL_COLOR_BUFFER_BIT);
+            while (!glfwWindowShouldClose(wnd))
+            {
+                glClear(GL_COLOR_BUFFER_BIT);
 
-            PROFC(EASY_BLOCK("Loading image into texture memory"));
-            if (!frameQueue.empty()) {
-                const vidIO::Frame &f = frameQueue.front();
-                if (!faceRects.empty()) {
-                    for (const cv::Rect &r : faceRects)
-                        cv::rectangle(f, r, borderColor, borderThickness);
-                    rectsBackup = faceRects;
+                PROFC(EASY_BLOCK("Loading image into texture memory"));
+                if (!frameQueue.empty()) {
+                    const vidIO::Frame &f = frameQueue.front();
+                    if (!faceRects.empty()) {
+                        for (const cv::Rect &r : faceRects)
+                            cv::rectangle(f, r, borderColor, borderThickness);
+                        rectsBackup = faceRects;
+                    }
+                    else {
+                        for (const cv::Rect &r : rectsBackup)
+                            cv::rectangle(f, r, borderColor, borderThickness);
+                    }
+                    gl::loadCVmat2GLTexture(tex, f, true);
+                    frameQueue.pop();
                 }
-                else {
-                    for (const cv::Rect &r : rectsBackup)
-                        cv::rectangle(f, r, borderColor, borderThickness);
-                }
-                gl::loadCVmat2GLTexture(tex, f, true);
-                frameQueue.pop();
+                PROFC(EASY_END_BLOCK);
+                tex.bind();
+
+                glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
+                tex.unbind();
+
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+                wnd::showWatcherWindow(humansWatched.load());
+                wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
+                ImGui::EndFrame();
+
+                int displayW, displayH;
+                glfwGetFramebufferSize(wnd, &displayW, &displayH);
+                glViewport(0, 0, displayW, displayH);
+                ImGui::Render();
+                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+                glfwSwapBuffers(wnd);
+                glfwPollEvents();
             }
-            PROFC(EASY_END_BLOCK);
-            tex.bind();
 
-            glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
-            tex.unbind();
+            prog.del();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui_ImplOpenGL3_Shutdown();
+            ImGui::DestroyContext();
 
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-            wnd::showWatcherWindow(humansWatched.load());
-            wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
-            ImGui::EndFrame();
-
-            int displayW, displayH;
-            glfwGetFramebufferSize(wnd, &displayW, &displayH);
-            glViewport(0, 0, displayW, displayH);
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            glfwSwapBuffers(wnd);
-            glfwPollEvents();
+            glfwDestroyWindow(wnd);
+            glfwTerminate();
+        }
+        catch (const std::runtime_error &e) {
+            std::cerr << e.what() << '\n';
+            std::exit(-1);
         }
 
-        prog.del();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui::DestroyContext();
-
-        glfwDestroyWindow(wnd);
-        glfwTerminate();
 
         shouldShutdown = true;
 

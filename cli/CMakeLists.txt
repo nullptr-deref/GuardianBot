@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.15)
 
 project("cli")
 
@@ -10,9 +10,3 @@ set_target_properties("cli"
     CXX_STANDARD_REQUIRED ON
     CXX_STANDARD 20
 )
-
-if(WIN32)
-target_compile_options("cli"
-    PRIVATE "/MTd"
-)
-endif(WIN32)

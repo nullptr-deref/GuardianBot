@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.15)
 
 project(gl LANGUAGES CXX)
 
@@ -24,9 +24,3 @@ set_target_properties(gl PROPERTIES
     CXX_STANDARD_REQUIRED TRUE
     CXX_STANDARD 17
 )
-
-if(WIN32)
-    target_compile_options(gl
-        PRIVATE "/MTd"
-    )
-endif()
