@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <map>
 #include <string>
 #include <string_view>
@@ -8,6 +9,11 @@
 #include <unordered_map>
 
 #include "Exception.hpp"
+
+template <typename T>
+concept Numeric = std::integral<T> || std::floating_point<T>;
+template <typename T>
+concept Extractable = Numeric || std::same_as<T, std::string>;
 
 namespace cli {
     enum class ArgType {
@@ -26,24 +32,22 @@ namespace cli {
         ArgData(ArgType type, std::string &&rawToken)
             : type_(type), raw_(std::move(rawToken)) {}
 
-        template <typename ExtractedType>
+        template <Extractable ExtractedType>
         auto get() -> ExtractedType {
-            static_assert(std::is_same<ExtractedType, std::string>() ||
-                    std::is_arithmetic<ExtractedType>(), "Argument cannot be converted to the specified type.");
             switch(this->type_) {
+                case ArgType::Number:
+                    if constexpr (std::is_floating_point<ExtractedType>())
+                        return std::atof(raw_);
+                    if constexpr (std::is_integral<ExtractedType>())
+                        return std::atoi(raw_);
+                    break;
+                case ArgType::List:
+                    // TODO: just create some implementation already
+                    return raw_;
+                    break;
                 case ArgType::String:
                     if constexpr (std::is_same<ExtractedType, std::string>())
                         return raw_;
-                    break;
-                case ArgType::Number:
-                    if constexpr (std::is_integral<ExtractedType>())
-                        return std::atoi(raw_);
-                    if constexpr (std::is_floating_point<ExtractedType>())
-                        return std::atof(raw_);
-                    break;
-                case ArgType::List:
-                    // TODO: somehow handle this mess, I think it shouldn't work like this
-                    return raw_;
                     break;
                 case ArgType::Flag:
                     if constexpr (std::is_integral<ExtractedType>())
