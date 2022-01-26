@@ -62,7 +62,7 @@ namespace cli {
     }
 
 
-    auto ArgumentParser::registerArg(ArgRecord rec) -> void {
+    auto ArgumentParser::registerArg(const ArgRecord &rec) -> void {
         if (isEntryAvailable(rec)) {
             registered_.push_back(rec);
         }

@@ -82,7 +82,7 @@ namespace cli {
         auto searchRegisteredArgRecord(const std::string &token) -> ArgRecord;
         auto isDuplicate(const ArgRecord &rec, const std::map<std::string, ArgData> &prevArgs) -> bool;
 
-        auto registerArg(ArgRecord rec) -> void;
+        auto registerArg(const ArgRecord &rec) -> void;
         auto isEntryAvailable(const ArgRecord &rec) -> bool;
 
         std::vector<ArgRecord> registered_;
