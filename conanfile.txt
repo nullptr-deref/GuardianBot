@@ -4,6 +4,7 @@ imgui/1.80
 glfw/3.3.2
 glew/2.2.0
 easy_profiler/2.1.0
+spdlog/1.9.2
 
 [generators]
 cmake_find_package

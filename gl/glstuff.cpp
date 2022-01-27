@@ -70,7 +70,7 @@ namespace gl {
         std::clog << p.getInfoLog() << '\n';
         const bool isProgReady = v && li;
 
-        if (!(isVertexReady && isFragReady && isProgReady)) throw std::runtime_error("Default shaders could not be loaded");
+        if (!(isVertexReady && isFragReady && isProgReady)) throw std::runtime_error("Default shaders could not be loaded.");
 
         return p;
     }

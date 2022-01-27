@@ -15,6 +15,7 @@ find_package(glfw3 3.3.2 EXACT REQUIRED)
 find_package(GLEW 2.2.0 EXACT REQUIRED)
 find_package(imgui 1.80 REQUIRED)
 find_package(easy_profiler 2.1.0 EXACT REQUIRED)
+find_package(spdlog 1.9.2 EXACT REQUIRED)
 
 add_subdirectory("vidIO")
 add_subdirectory("Serial")
@@ -41,6 +42,7 @@ target_include_directories(GuardianBotApp
     ${GLEW_INCLUDE_DIRS}
     ${OpenGL_INCLUDE_DIRS}
     ${easy_profiler_INCLUDE_DIRS}
+    ${spdlog_INCLUDE_DIRS}
 
     ${CMAKE_SOURCE_DIR}/Serial
     ${CMAKE_SOURCE_DIR}
@@ -53,6 +55,7 @@ target_link_libraries(GuardianBotApp
     GLEW::GLEW
     imgui::imgui
     easy_profiler
+    spdlog::spdlog
     cli
     vidIO
     Serial

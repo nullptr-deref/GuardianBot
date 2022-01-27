@@ -30,6 +30,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
+#include <spdlog/spdlog.h>
+
 #include "cli/ArgumentParser.hpp"
 #include "Serial/SerialPort.hpp"
 
@@ -42,6 +44,7 @@
 using Image = cv::Mat;
 
 int main(int argc, char **argv) {
+    spdlog::info("Loaded application");
     PROFC(EASY_PROFILER_ENABLE);
     PROFC(EASY_MAIN_THREAD);
 
@@ -51,10 +54,12 @@ int main(int argc, char **argv) {
     try {
         ap.arg(cli::ArgType::String, { .fullName = "prototxt", .shortName = "p" });
         ap.arg(cli::ArgType::String, { .fullName = "model", .shortName = "m" });
+        spdlog::info("Parsing cli arguments");
         am = ap.parse(argc, argv);
+        spdlog::info("Done parsing");
     }
     catch (const cli::BasicException &e) {
-        std::cerr << e.what() << '\n';
+        spdlog::critical("{}", e.what());
         std::exit(-1);
     }
     PROFC(EASY_END_BLOCK);
@@ -62,8 +67,10 @@ int main(int argc, char **argv) {
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
+    spdlog::info("Quering available COM ports");
     const std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
+    spdlog::info("Variables initialization...");
     PROFC(EASY_BLOCK("Camera constructor call"));
     vidIO::Camera cam;
     PROFC(EASY_END_BLOCK);
@@ -81,52 +88,53 @@ int main(int argc, char **argv) {
     char arduinoCommandBuf[BUF_SIZE] = { 0 };
 
     std::unique_ptr<SerialPort> connected = nullptr;
+    spdlog::info("Done initializing");
 
-    std::thread interfaceThread([&] {
-        std::clog << "[THREAD] Render thread created.\n";
-
-        if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
-
-        GLFWwindow *wnd = gl::createDefaultWindow("Viewport");
-        glfwMakeContextCurrent(wnd);
-        glfwSwapInterval(1);
-
-        if (glewInit() != GLEW_OK) throw std::runtime_error("Could not initialize GLEW.");
-
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-
-        const GLuint VERTICES_COUNT = 4;
-        const float verticesData[16] =
-        {
-            // Positions  // Texture coordinates
-            -1.0f,  1.0f, 0.0f, 1.0f,
-             1.0f,  1.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 1.0f, 0.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f
-        };
-
-        gl::VertexBuffer vb(verticesData, VERTICES_COUNT * 4, GL_STATIC_DRAW);
-        gl::VertexArray va;
-        gl::VertexArrayLayout layout;
-        layout.addAttribute(2, GL_FLOAT, true);
-        layout.addAttribute(2, GL_FLOAT, true);
-        va.setLayout(layout);
-
-        const unsigned int ELEMENTS_COUNT = 6;
-        const GLuint indices[ELEMENTS_COUNT] =
-        {
-            0, 1, 2,
-            0, 2, 3
-        };
-        gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
-        gl::Texture tex(GL_TEXTURE_2D);
-        tex.setAttr(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        tex.setAttr(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        tex.setAttr(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        tex.setAttr(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    std::thread renderThread([&] {
+        spdlog::info("Render thread up");
 
         try {
+            if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
+
+            GLFWwindow *wnd = gl::createDefaultWindow("Viewport");
+            glfwMakeContextCurrent(wnd);
+            glfwSwapInterval(1);
+
+            if (glewInit() != GLEW_OK) throw std::runtime_error("Could not initialize GLEW.");
+
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+
+            const GLuint VERTICES_COUNT = 4;
+            const float verticesData[16] =
+            {
+                // Positions  // Texture coordinates
+                -1.0f,  1.0f, 0.0f, 1.0f,
+                 1.0f,  1.0f, 1.0f, 1.0f,
+                 1.0f, -1.0f, 1.0f, 0.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f
+            };
+
+            gl::VertexBuffer vb(verticesData, VERTICES_COUNT * 4, GL_STATIC_DRAW);
+            gl::VertexArray va;
+            gl::VertexArrayLayout layout;
+            layout.addAttribute(2, GL_FLOAT, true);
+            layout.addAttribute(2, GL_FLOAT, true);
+            va.setLayout(layout);
+
+            const unsigned int ELEMENTS_COUNT = 6;
+            const GLuint indices[ELEMENTS_COUNT] =
+            {
+                0, 1, 2,
+                0, 2, 3
+            };
+            gl::IndexBuffer ib(indices, ELEMENTS_COUNT, GL_STATIC_DRAW);
+            gl::Texture tex(GL_TEXTURE_2D);
+            tex.setAttr(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            tex.setAttr(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            tex.setAttr(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            tex.setAttr(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
             const gl::Program prog = gl::loadDefaultShaders();
             prog.use();
 
@@ -148,7 +156,9 @@ int main(int argc, char **argv) {
                 glClear(GL_COLOR_BUFFER_BIT);
 
                 PROFC(EASY_BLOCK("Loading image into texture memory"));
+                spdlog::info("Quering frame queue for next frame for rendering...");
                 if (!frameQueue.empty()) {
+                    spdlog::info("Got frame, drawing...");
                     const vidIO::Frame &f = frameQueue.front();
                     if (!faceRects.empty()) {
                         for (const cv::Rect &r : faceRects)
@@ -161,25 +171,32 @@ int main(int argc, char **argv) {
                     }
                     gl::loadCVmat2GLTexture(tex, f, true);
                     frameQueue.pop();
+                    spdlog::info("Drawing done");
                 }
                 PROFC(EASY_END_BLOCK);
+                spdlog::info("Binding texture and rendering...");
                 tex.bind();
 
                 glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
                 tex.unbind();
+                spdlog::info("Done rendering");
 
+                spdlog::info("Imgui frame init...");
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
                 wnd::showWatcherWindow(humansWatched.load());
                 wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
                 ImGui::EndFrame();
+                spdlog::info("Done");
 
+                spdlog::info("Imgui rendering...");
                 int displayW, displayH;
                 glfwGetFramebufferSize(wnd, &displayW, &displayH);
                 glViewport(0, 0, displayW, displayH);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+                spdlog::info("Done imgui rendering");
 
                 glfwSwapBuffers(wnd);
                 glfwPollEvents();
@@ -200,21 +217,24 @@ int main(int argc, char **argv) {
 
         shouldShutdown = true;
 
-        std::clog << "[THREAD] Render thread closed.\n";
+        spdlog::info("Render thread shutdown");
     });
-    interfaceThread.detach();
+    renderThread.detach();
 
-    std::thread netThread([&]
-    {
-        std::clog << "[THREAD] Created network thread.\n";
+    std::thread netThread([&] {
+        spdlog::info("Net thread up");
+        spdlog::info("Reading model from file...");
         PROFC(EASY_BLOCK("Reading model from file"));
         cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
         PROFC(EASY_END_BLOCK);
+        spdlog::info("Read model successfully");
 
         const float defaultConfidence = 0.8f;
         while (!shouldShutdown)
         {
+            spdlog::info("Quering frame queue for the next frame for detection...");
             if (!frameQueue.empty()) {
+                spdlog::info("Got next frame, processing...");
                 PROFC(EASY_BLOCK("Reading next frame from queue"));
                 const vidIO::Frame &f = frameQueue.front();
 
@@ -224,6 +244,7 @@ int main(int argc, char **argv) {
                 nnet.setInput(blob);
                 const cv::Mat detection = nnet.forward();
                 PROFC(EASY_END_BLOCK);
+                spdlog::info("Frame processed");
 
                 // As far as I understood, cv::Mat::size represents:
                 // size[0] - mat rows
@@ -232,6 +253,7 @@ int main(int argc, char **argv) {
                 // size[3] - something like data per detection (especially for detections
                 // produced by cv::Net)
                 
+                spdlog::info("Reading detections and writing face underline data...");
                 const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
                 if (!faceRects.empty()) faceRects.clear();
 
@@ -253,27 +275,38 @@ int main(int argc, char **argv) {
                         );
                     }
                 }
+                spdlog::info("Detections data processed");
+                spdlog::info("Setting atomic...");
                 humansWatched = faceRects.size();
 
+                spdlog::info("Done");
             }
         }
-        std::clog << "[THREAD] Network thread destroyed.\n";
+        spdlog::info("Net thread shutdown");
     });
     netThread.detach();
 
-    std::clog << "[THREAD] Entering main thread loop.\n";
+    spdlog::info("Main thread up");
     while (!shouldShutdown) try
     {
+        spdlog::info("Reading next frame from camera");
         PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
+        spdlog::info("Read frame");
         frameQueue.push(frame);
         PROFC(EASY_END_BLOCK);
+        spdlog::info("Pushed frame to the queue");
     }
     catch (const std::runtime_error &e) {
         std::cerr << e.what() << '\n';
     }
-    std::clog << "[THREAD] Main thread loop destroyed.\n";
-    connected->close();
+    spdlog::info("Main thread shutdown");
+    spdlog::info("Trying to close serial port if opened");
+    if (connected) {
+        spdlog::info("Serial port opened, closing...");
+        connected->close();
+        spdlog::info("Closed serial port connection");
+    }
 
     PROFC(profiler::dumpBlocksToFile("C:/dev/GuardianBot/dumps/test.prof"));
     return 0;
