@@ -3,10 +3,9 @@
 namespace vidIO {
     CVCameraAdapter::CVCameraAdapter() { this->open(); }
     bool CVCameraAdapter::open() {
-        if (!cap.isOpened()) return cap.open(0);
-
-        return false;
+        return cap.open(0);
     }
+
     void CVCameraAdapter::close() { if (cap.isOpened()) cap.release(); }
     Frame CVCameraAdapter::nextFrame() {
         cv::Mat frame;
@@ -15,5 +14,6 @@ namespace vidIO {
 
         return frame;
     }
+
     CVCameraAdapter::~CVCameraAdapter() { this->close(); }
 }

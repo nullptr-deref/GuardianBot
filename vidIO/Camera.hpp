@@ -13,6 +13,6 @@ namespace vidIO {
         void close();
         Frame nextFrame();
     private:
-        std::unique_ptr<CameraAdapter> adapter;
+        std::unique_ptr<CameraAdapter> adapter = nullptr;
     };
 }

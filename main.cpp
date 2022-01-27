@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     // I check for available ports here because later usage of this function deadly
     // interrupts RealSense device work and it crashes.
     // This must be placed before Camera ctor call at all costs!
-    std::vector<std::string> availablePorts = SerialPort::queryAvailable();
+    const std::vector<std::string> availablePorts = SerialPort::queryAvailable();
 
     PROFC(EASY_BLOCK("Camera constructor call"));
     vidIO::Camera cam;
@@ -82,8 +82,7 @@ int main(int argc, char **argv) {
 
     std::unique_ptr<SerialPort> connected = nullptr;
 
-    std::thread interfaceThread([&]
-    {
+    std::thread interfaceThread([&] {
         std::clog << "[THREAD] Render thread created.\n";
 
         if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
@@ -199,7 +198,6 @@ int main(int argc, char **argv) {
             std::exit(-1);
         }
 
-
         shouldShutdown = true;
 
         std::clog << "[THREAD] Render thread closed.\n";
@@ -264,12 +262,15 @@ int main(int argc, char **argv) {
     netThread.detach();
 
     std::clog << "[THREAD] Entering main thread loop.\n";
-    while (!shouldShutdown)
+    while (!shouldShutdown) try
     {
         PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
         frameQueue.push(frame);
         PROFC(EASY_END_BLOCK);
+    }
+    catch (const std::runtime_error &e) {
+        std::cerr << e.what() << '\n';
     }
     std::clog << "[THREAD] Main thread loop destroyed.\n";
     connected->close();

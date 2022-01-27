@@ -29,7 +29,7 @@ namespace wnd {
 
     void showControllerWindow(std::unique_ptr<SerialPort> &port, char *commandBuf, size_t bufSize, const std::vector<std::string> &ports) {
         bool controllerShown = true;
-        static std::string currentlyConnectedPort;
+        static std::string connectedPortName = "";
 
         ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
         ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
@@ -42,13 +42,13 @@ namespace wnd {
                     if (ImGui::MenuItem(iport.c_str()))
                     {
                         port = std::make_unique<SerialPort>(iport, SerialMode::ReadWrite);
-                        currentlyConnectedPort = iport;
+                        connectedPortName = iport;
                     }
                 }
                 ImGui::EndMenu();
             }
-            const std::string connectionLabel = currentlyConnectedPort.size() > 0 ?
-                "Currently connected to " + currentlyConnectedPort + "." :
+            const std::string connectionLabel = connectedPortName.size() > 0 ?
+                "Currently connected to " + connectedPortName + "." :
                 "No COM port connection.";
             ImGui::Text(connectionLabel.c_str());
             ImGui::EndChild();
