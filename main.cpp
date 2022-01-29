@@ -212,7 +212,8 @@ int main(int argc, char **argv) {
             glfwTerminate();
         }
         catch (const std::runtime_error &e) {
-            std::cerr << e.what() << '\n';
+            // Catching glew and glfw initialization errors
+            spdlog::critical(e.what());
             std::exit(-1);
         }
 
@@ -277,8 +278,7 @@ int main(int argc, char **argv) {
                         humansWatched = faceRects.size();
                     }
                     catch (const std::exception &e) {
-                        std::cerr << "Dropping detection frame, something is wrong.\n";
-                        std::cerr << e.what() << '\n';
+                        spdlog::warn("Dropping detection frame, something is wrong.\n{}", e.what());
                         continue;
                     }
                 }
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
             spdlog::critical("Referencing command line argument with no value:\n{}", e.what());
             std::exit(-1);
         }
-        std::clog << "[THREAD] Network thread destroyed.\n";
+        spdlog::info("Network thread shutdown");
     });
     netThread.detach();
 
@@ -304,10 +304,10 @@ int main(int argc, char **argv) {
         spdlog::info("Pushed frame to the queue");
     }
     catch (const std::runtime_error &e) {
-        std::cerr << e.what() << '\n';
+        spdlog::warn(e.what());
     }
     spdlog::info("Main thread shutdown");
-    spdlog::info("Trying to close serial port if opened");
+    spdlog::info("Trying to close serial port if opened...");
     if (connected) {
         spdlog::info("Serial port opened, closing...");
         connected->close();
