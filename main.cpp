@@ -160,7 +160,8 @@ int main(int argc, char **argv) {
                             cv::rectangle(f, r, borderColor, borderThickness);
                     }
                     gl::loadCVmat2GLTexture(tex, f, true);
-                    frameQueue.pop();
+                    if (frameQueue.size() > 1)
+                        frameQueue.pop();
                 }
                 PROFC(EASY_END_BLOCK);
                 tex.bind();
@@ -208,54 +209,68 @@ int main(int argc, char **argv) {
     {
         std::clog << "[THREAD] Created network thread.\n";
         PROFC(EASY_BLOCK("Reading model from file"));
-        cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am["prototxt"].get<std::string>(), am["model"].get<std::string>());
-        PROFC(EASY_END_BLOCK);
+        try {
+            cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am.at("prototxt").get<std::string>(), am.at("model").get<std::string>());
+            PROFC(EASY_END_BLOCK);
 
-        const float defaultConfidence = 0.8f;
-        while (!shouldShutdown)
-        {
-            if (!frameQueue.empty()) {
-                PROFC(EASY_BLOCK("Reading next frame from queue"));
-                const vidIO::Frame &f = frameQueue.front();
+            const float defaultConfidence = 0.8f;
+            const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
+            while (!shouldShutdown)
+            {
+                if (!frameQueue.empty()) {
+                    PROFC(EASY_BLOCK("Copying next frame from queue"));
+                    const vidIO::Frame frameCopy = frameQueue.front();
+                    PROFC(EASY_END_BLOCK);
 
-                PROFC(EASY_BLOCK("Detection", profiler::colors::Blue));
-                const cv::Scalar mean = cv::Scalar(104.0, 177.0, 123.0);
-                const cv::Mat blob = cv::dnn::blobFromImage(f, 1.0f, cv::Size(300, 300), mean, false, false);
-                nnet.setInput(blob);
-                const cv::Mat detection = nnet.forward();
-                PROFC(EASY_END_BLOCK);
+                    try {
+                        PROFC(EASY_BLOCK("Detection", profiler::colors::Blue));
+                        const cv::Mat blob = cv::dnn::blobFromImage(frameCopy, 1.0f, cv::Size(300, 300), mean, false, false);
+                        nnet.setInput(blob);
+                        const cv::Mat detection = nnet.forward();
+                        PROFC(EASY_END_BLOCK);
 
-                // As far as I understood, cv::Mat::size represents:
-                // size[0] - mat rows
-                // size[1] - mat columns
-                // size[2] - mat depth
-                // size[3] - something like data per detection (especially for detections
-                // produced by cv::Net)
-                
-                const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
-                if (!faceRects.empty()) faceRects.clear();
+                        // As far as I understood, cv::Mat::size represents:
+                        // size[0] - mat rows
+                        // size[1] - mat columns
+                        // size[2] - mat depth
+                        // size[3] - something like data per detection (especially for detections
+                        // produced by cv::Net)
+                        
+                        const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
+                        if (!faceRects.empty()) faceRects.clear();
 
-                for (int i = 0; i < detections.rows; i++) {
-                    const float confidence = detections.at<float>(i, 2);
+                        for (int i = 0; i < detections.rows; i++) {
+                            const float confidence = detections.at<float>(i, 2);
 
-                    if (confidence >= defaultConfidence) {
-                        const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * f.cols);
-                        const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * f.rows);
-                        const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * f.cols);
-                        const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * f.rows);
+                            if (confidence >= defaultConfidence) {
+                                const int xLeftBottom = static_cast<int>(detections.at<float>(i, 3) * frameCopy.cols);
+                                const int yLeftBottom = static_cast<int>(detections.at<float>(i, 4) * frameCopy.rows);
+                                const int xRightTop = static_cast<int>(detections.at<float>(i, 5) * frameCopy.cols);
+                                const int yRightTop = static_cast<int>(detections.at<float>(i, 6) * frameCopy.rows);
 
-                        faceRects.emplace_back
-                        (
-                            xLeftBottom,
-                            yLeftBottom,
-                            xRightTop - xLeftBottom,
-                            yRightTop - yLeftBottom
-                        );
+                                faceRects.emplace_back
+                                (
+                                    xLeftBottom,
+                                    yLeftBottom,
+                                    xRightTop - xLeftBottom,
+                                    yRightTop - yLeftBottom
+                                );
+                            }
+                        }
+                        humansWatched = faceRects.size();
+                    }
+                    catch (const std::exception &e) {
+                        std::cerr << "Dropping detection frame, something is wrong.\n";
+                        std::cerr << e.what() << '\n';
+                        continue;
                     }
                 }
-                humansWatched = faceRects.size();
-
             }
+        }
+        catch (const std::out_of_range &e) {
+            std::cerr << "Referencing command line argument with no value:\n";
+            std::cerr << e.what() << '\n';
+            std::exit(-1);
         }
         std::clog << "[THREAD] Network thread destroyed.\n";
     });
