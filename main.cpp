@@ -156,9 +156,7 @@ int main(int argc, char **argv) {
                 glClear(GL_COLOR_BUFFER_BIT);
 
                 PROFC(EASY_BLOCK("Loading image into texture memory"));
-                spdlog::info("Quering frame queue for next frame for rendering...");
                 if (!frameQueue.empty()) {
-                    spdlog::info("Got frame, drawing...");
                     const vidIO::Frame &f = frameQueue.front();
                     if (!faceRects.empty()) {
                         for (const cv::Rect &r : faceRects)
@@ -170,34 +168,27 @@ int main(int argc, char **argv) {
                             cv::rectangle(f, r, borderColor, borderThickness);
                     }
                     gl::loadCVmat2GLTexture(tex, f, true);
-                    spdlog::info("Drawing done");
                     if (frameQueue.size() > 1)
                         frameQueue.pop();
                 }
                 PROFC(EASY_END_BLOCK);
-                spdlog::info("Binding texture and rendering...");
                 tex.bind();
 
                 glDrawElements(GL_TRIANGLES, ELEMENTS_COUNT, GL_UNSIGNED_INT, nullptr);
                 tex.unbind();
-                spdlog::info("Done rendering");
 
-                spdlog::info("Imgui frame init...");
                 ImGui_ImplOpenGL3_NewFrame();
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
                 wnd::showWatcherWindow(humansWatched.load());
                 wnd::showControllerWindow(connected, arduinoCommandBuf, BUF_SIZE, availablePorts);
                 ImGui::EndFrame();
-                spdlog::info("Done");
 
-                spdlog::info("Imgui rendering...");
                 int displayW, displayH;
                 glfwGetFramebufferSize(wnd, &displayW, &displayH);
                 glViewport(0, 0, displayW, displayH);
                 ImGui::Render();
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-                spdlog::info("Done imgui rendering");
 
                 glfwSwapBuffers(wnd);
                 glfwPollEvents();
@@ -295,13 +286,10 @@ int main(int argc, char **argv) {
     spdlog::info("Main thread up");
     while (!shouldShutdown) try
     {
-        spdlog::info("Reading next frame from camera");
         PROFC(EASY_BLOCK("Reading next frame from camera"));
         const vidIO::Frame frame = cam.nextFrame();
-        spdlog::info("Read frame");
         frameQueue.push(frame);
         PROFC(EASY_END_BLOCK);
-        spdlog::info("Pushed frame to the queue");
     }
     catch (const std::runtime_error &e) {
         spdlog::warn(e.what());
@@ -309,9 +297,6 @@ int main(int argc, char **argv) {
     spdlog::info("Main thread shutdown");
     spdlog::info("Trying to close serial port if opened...");
     if (connected) {
-        spdlog::info("Serial port opened, closing...");
-        connected->close();
-        spdlog::info("Closed serial port connection");
         try {
             spdlog::info("Serial port opened, closing...");
             connected->close();
@@ -323,5 +308,6 @@ int main(int argc, char **argv) {
     }
 
     PROFC(profiler::dumpBlocksToFile("C:/dev/GuardianBot/dumps/test.prof"));
+
     return 0;
 }
