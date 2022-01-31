@@ -312,6 +312,14 @@ int main(int argc, char **argv) {
         spdlog::info("Serial port opened, closing...");
         connected->close();
         spdlog::info("Closed serial port connection");
+        try {
+            spdlog::info("Serial port opened, closing...");
+            connected->close();
+            spdlog::info("Closed serial port connection");
+        }
+        catch (const std::runtime_error &e) {
+            spdlog::warn(e.what());
+        }
     }
 
     PROFC(profiler::dumpBlocksToFile("C:/dev/GuardianBot/dumps/test.prof"));
