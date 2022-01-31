@@ -6,6 +6,8 @@
 
 #include <imgui.h>
 
+#include <spdlog/spdlog.h>
+
 #include "Serial/SerialPort.hpp"
 #include "ImGuiConstants.hpp"
 
@@ -33,21 +35,19 @@ namespace wnd {
 
         ImGui::SetNextWindowPos({ imguic::controller::x, imguic::controller::y }, ImGuiCond_Always);
         ImGui::SetNextWindowSize({ imguic::controller::w, imguic::controller::h }, ImGuiCond_Always);
+        static std::string sendMessage;
         ImGui::Begin("controller", &controllerShown);
             ImGui::BeginChild("port", ImVec2(0, 64), true);
-            if (ImGui::BeginMenu("Available COM ports"))
-            {
-                for (const auto &iport : ports)
-                {
-                    if (ImGui::MenuItem(iport.c_str()))
-                    {
-                        port = std::make_unique<SerialPort>(iport, SerialMode::ReadWrite);
-                        connectedPortName = iport;
+            if (ImGui::BeginMenu("Available COM ports")) {
+                for (const auto &availablePort: ports) {
+                    if (ImGui::MenuItem(availablePort.c_str())) {
+                        port = std::make_unique<SerialPort>(availablePort, SerialMode::ReadWrite);
+                        connectedPortName = availablePort;
                     }
                 }
                 ImGui::EndMenu();
             }
-            const std::string connectionLabel = connectedPortName.size() > 0 ?
+            const std::string connectionLabel = !connectedPortName.empty() ?
                 "Currently connected to " + connectedPortName + "." :
                 "No COM port connection.";
             ImGui::Text(connectionLabel.c_str());
@@ -57,25 +57,33 @@ namespace wnd {
             ImGui::InputText("Type a command", commandBuf, bufSize);
             if (ImGui::Button("Send", { imguic::controller::btnW, imguic::controller::btnH }))
             {
-                port->open();
-                std::clog << "[PORT INFO] Sending: ";
-                for (uint32_t i = 0; i < bufSize; i++) {
-                    if (commandBuf[i] == 0) break;
-                    std::clog << commandBuf[i];
-                }
-                std::clog << '\n';
+                try {
+                    if (connectedPortName.empty()) {
+                        sendMessage = "No COM port selected to send the command.";
+                        spdlog::warn("No COM port selected to send the command");
+                    }
+                    else {
+                        port->open();
+                        sendMessage = "Trying to send command to COM port...";
 
-                port->write(commandBuf, static_cast<uint32_t>(bufSize));
-                std::clog << "Wrote to port successfully.\n";
-                port->close();
-                clearBuffer(commandBuf, bufSize);
+                        spdlog::info("Trying to send command to COM port");
+                        port->write(commandBuf, static_cast<uint32_t>(bufSize));
+                        spdlog::info("Wrote to COM port successfully.");
+                        sendMessage = "Wrote to COM port successfully.";
+                        port->close();
+                        clearBuffer(commandBuf, bufSize);
+                    }
+                }
+                catch (const std::runtime_error &e) {
+                    spdlog::warn(e.what());
+                }
             }
+            ImGui::Text(sendMessage.c_str());
             ImGui::EndChild();
         ImGui::End();
     }
 }
 
-void clearBuffer(char *buf, const size_t bsize)
-{
+void clearBuffer(char *buf, const size_t bsize) {
     for (size_t i = 0; i < bsize; i++) buf[i] = 0;
 }
