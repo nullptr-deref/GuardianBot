@@ -24,11 +24,6 @@ project to make it able to use different cameras, not only
 RealSense devices (simply because I'm currently have no
 access to device I used to have).
 
-Also, current version of program has some weird behaviour
-making program exit unexpectedly for no reason. If you have
-ideas and/or experience on solving this kind of issues, please
-contact me or create a PR.
-
 ### Build and run
 
 Finally, support for simple cameras delivered so feel free to
@@ -42,7 +37,7 @@ Then, the build itself:
 dependencies can be built. If you doesn't have it, visit [conan's official website](conan.io) and
 install it.
 
-- If you have conan installed on your computer, then run the following commands:
+- If you have Conan installed on your computer, then run the following commands:
 ```bash
 $ mkdir build
 $ cd build
