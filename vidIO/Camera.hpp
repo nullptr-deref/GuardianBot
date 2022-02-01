@@ -12,6 +12,7 @@ namespace vidIO {
         bool open();
         void close();
         Frame nextFrame();
+        auto frameData() const -> const FrameData &;
     private:
         std::unique_ptr<CameraAdapter> adapter = nullptr;
     };

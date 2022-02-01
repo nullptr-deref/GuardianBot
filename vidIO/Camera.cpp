@@ -9,4 +9,7 @@ namespace vidIO {
     bool Camera::open() { return adapter->open(); }
     void Camera::close() { adapter->close(); }
     Camera::~Camera() { adapter->close(); }
+    auto Camera::frameData() const -> const FrameData & {
+        return adapter->frameData();
+    }
 }
