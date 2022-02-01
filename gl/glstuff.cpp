@@ -9,7 +9,7 @@
 #include "Program.hpp"
 
 namespace gl {
-    GLFWwindow * createDefaultWindow(const std::string &windowName) {
+    GLFWwindow * createDefaultWindow(const std::string &windowName, uint64_t width, uint64_t height) {
         GLFWmonitor *pmonitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *vmode = glfwGetVideoMode(pmonitor);
 
@@ -18,8 +18,9 @@ namespace gl {
         glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
         glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        GLFWwindow *wnd = glfwCreateWindow(vmode->width - 100, vmode->height - 100, windowName.c_str(), nullptr, nullptr);
-        glfwSetWindowPos(wnd, 50, 50);
+        const uint64_t actualWidth = width > vmode->width ? vmode->width : width;
+        const uint64_t actualHeight = height > vmode->height ? vmode->height : height;
+        GLFWwindow *wnd = glfwCreateWindow(actualWidth, actualHeight, windowName.c_str(), nullptr, nullptr);
 
         return wnd;
     }
