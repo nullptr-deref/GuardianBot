@@ -11,7 +11,7 @@
 
 namespace gl {
     class Texture;
-    GLFWwindow * createDefaultWindow(const std::string &windowName);
+    GLFWwindow * createDefaultWindow(const std::string &windowName, uint64_t width, uint64_t height);
     void loadCVmat2GLTexture(const Texture &texture, const cv::Mat &image, bool shouldFlip = false);
     Program loadDefaultShaders();
     GLuint retrieveTypeSize(GLenum type);

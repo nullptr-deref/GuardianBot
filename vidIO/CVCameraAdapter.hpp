@@ -15,6 +15,6 @@ namespace vidIO {
         Frame nextFrame() override;
 
     private:
-        cv::VideoCapture cap;
+        cv::VideoCapture cap_;
     };
 }

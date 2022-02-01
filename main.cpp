@@ -96,7 +96,9 @@ int main(int argc, char **argv) {
         try {
             if (!glfwInit()) throw std::runtime_error("Could not initialize GLFW.");
 
-            GLFWwindow *wnd = gl::createDefaultWindow("Viewport");
+                GLFWwindow *wnd = gl::createDefaultWindow("Viewport",
+                        2 * cam.frameData().width,
+                        2 * cam.frameData().height);
             glfwMakeContextCurrent(wnd);
             glfwSwapInterval(1);
 
