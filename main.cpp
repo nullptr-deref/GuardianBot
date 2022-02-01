@@ -219,7 +219,9 @@ int main(int argc, char **argv) {
         try {
             spdlog::info("Reading model from file...");
             PROFC(EASY_BLOCK("Reading model from file"));
-            cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(am.at("prototxt").get<std::string>(), am.at("model").get<std::string>());
+            cv::dnn::Net nnet = cv::dnn::readNetFromCaffe(
+                    am.at("prototxt").get<std::string>(),
+                    am.at("model").get<std::string>());
             PROFC(EASY_END_BLOCK);
 
             const float defaultConfidence = 0.8f;
@@ -245,8 +247,11 @@ int main(int argc, char **argv) {
                         // size[3] - something like data per detection (especially for detections
                         // produced by cv::Net)
                         
-                        const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3], CV_32F, (void *)detection.ptr<float>());
-                        if (!faceRects.empty()) faceRects.clear();
+                        const cv::Mat detections = cv::Mat(detection.size[2], detection.size[3],
+                                CV_32F,
+                                (void *)detection.ptr<float>());
+                        if (!faceRects.empty())
+                            faceRects.clear();
 
                         for (int i = 0; i < detections.rows; i++) {
                             const float confidence = detections.at<float>(i, 2);
@@ -269,7 +274,8 @@ int main(int argc, char **argv) {
                         humansWatched = faceRects.size();
                     }
                     catch (const std::exception &e) {
-                        spdlog::warn("Dropping detection frame, something is wrong.\n{}", e.what());
+                        spdlog::warn("Dropping detection frame, something is wrong.\n{}",
+                                e.what());
                         continue;
                     }
                 }
