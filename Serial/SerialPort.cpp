@@ -9,14 +9,16 @@ void SerialPort::open()
 {
 	m_hCom = CreateFileA(name.c_str(), static_cast<unsigned long>(mode), false, nullptr, CREATE_NEW, OPEN_EXISTING, nullptr);
 
-	if (INVALID_HANDLE_VALUE == m_hCom) throw std::runtime_error("Cannot connect to serial port [" + name + ']');
+	if (INVALID_HANDLE_VALUE == m_hCom)
+            throw std::runtime_error("Cannot connect to serial port [" + name + ']');
 
 	DCB m_serialParams { 0 };
 	m_serialParams.DCBlength = sizeof(m_serialParams);
 
 	const bool currComStatusRetrieved = GetCommState(m_hCom, &m_serialParams);
 
-	if (!currComStatusRetrieved) throw std::runtime_error("Could not retrieve serial port status.");
+	if (!currComStatusRetrieved)
+            throw std::runtime_error("Could not retrieve serial port status.");
 
 	m_serialParams.BaudRate = baudrate;
 	m_serialParams.fBinary = true;
@@ -51,7 +53,6 @@ void SerialPort::write(const char *data, uint32_t count)
 	const bool isWritten = WriteFile(m_hCom, data, count, &bytesWritten, nullptr);
 	if (!isWritten) throw std::runtime_error("Could not write to serial port.");
 }
-
 
 SerialReadData SerialPort::read()
 {
